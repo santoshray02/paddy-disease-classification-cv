@@ -1,6 +1,11 @@
 from ultralytics import YOLO
 import cv2
 import numpy as np
+import os
+import random
+import requests
+from zipfile import ZipFile
+from io import BytesIO
 
 def load_yolov8(model_size='s'):
     model = YOLO(f'yolov8{model_size}.pt')
