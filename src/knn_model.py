@@ -20,13 +20,21 @@ def predict_knn(model, X):
     return model.predict(X)
 
 if __name__ == "__main__":
-    # Example usage
-    X = np.random.rand(100, 10)  # 100 samples, 10 features
-    y = np.random.randint(0, 3, 100)  # 3 classes
+    import argparse
+    from sklearn.datasets import load_iris
     
-    knn_model = train_knn(X, y)
+    parser = argparse.ArgumentParser(description='Train and test KNN model.')
+    parser.add_argument('--n_neighbors', type=int, default=5, help='Number of neighbors for KNN')
+    parser.add_argument('--test_size', type=float, default=0.2, help='Test size for train-test split')
+    args = parser.parse_args()
+    
+    # Load iris dataset as an example
+    iris = load_iris()
+    X, y = iris.data, iris.target
+    
+    knn_model = train_knn(X, y, n_neighbors=args.n_neighbors)
     
     # Make a prediction
-    sample = np.random.rand(1, 10)
+    sample = X[0].reshape(1, -1)  # Use the first sample as an example
     prediction = predict_knn(knn_model, sample)
     print(f"Predicted class: {prediction[0]}")
