@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLOv8 Object Detection</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>YOLOv8 Object Detection</h1>
+    <input type="file" id="imageUpload" accept="image/*">
+    <button onclick="detectObjects()">Detect Objects</button>
+    <div id="result">
+        <img id="resultImage" style="max-width: 100%;">
+    </div>
+
+    <script>
+        function detectObjects() {
+            var fileInput = document.getElementById('imageUpload');
+            var file = fileInput.files[0];
+            var formData = new FormData();
+            formData.append('file', file);
+
+            $.ajax({
+                url: '/',
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(data) {
+                    if(data.error) {
+                        alert(data.error);
+                    } else {
+                        document.getElementById('resultImage').src = 'data:image/jpeg;base64,' + data.image;
+                    }
+                },
+                error: function() {
+                    alert('Error occurred');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
