@@ -16,6 +16,10 @@ conda install -y -c conda-forge jupyterlab
 
 # Install additional packages using pip
 pip install ultralytics  # for YOLOv5 and YOLOv8
+pip install yolov5  # specific YOLOv5 package
+pip install yolov7  # for YOLOv7
+pip install seaborn  # for enhanced visualizations
+pip install albumentations  # for advanced data augmentation
 
 echo "Conda environment '$ENV_NAME' has been created and packages have been installed."
 echo "To activate the environment, use: conda activate $ENV_NAME"
