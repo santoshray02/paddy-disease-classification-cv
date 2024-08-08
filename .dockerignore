@@ -1,0 +1,28 @@
+# Ignore git and cache folders
+.git
+__pycache__
+
+# Ignore all markdown and text files
+*.md
+*.txt
+!requirements.txt
+
+# Ignore all log files
+*.log
+
+# Ignore all test files
+tests/
+
+# Ignore all data and model files (assuming they're large and not needed in the container)
+data/
+models/
+
+# Ignore all notebook files
+*.ipynb
+notebooks/
+
+# Ignore all result files
+results/
+
+# Ignore all environment files
+.env

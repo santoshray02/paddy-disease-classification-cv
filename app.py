@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import base64
 from src.yolov8_model import load_yolov8, predict_yolov8, process_results
+import os
 
 app = Flask(__name__)
 
@@ -40,4 +41,5 @@ def index():
     return render_template('index.html')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
