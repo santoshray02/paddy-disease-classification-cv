@@ -126,11 +126,23 @@ Contributions to this project are welcome. Please fork the repository and submit
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## Requirements
+
+- Python 3.8+
+- CUDA-capable GPU (for faster training and inference)
+- Conda (for environment management)
+
 ## Contact
 
 Santosh Kumar
 
 Project Link: [https://github.com/santoshray02/paddy-disease-classification-cv](https://github.com/santoshray02/paddy-disease-classification-cv)
+
+## Acknowledgements
+
+- [Paddy Doctor Dataset](https://ieee-dataport.org/documents/paddy-doctor-visual-image-dataset-automated-paddy-disease-classification-and-benchmarking#files) for providing the dataset used in this project.
+- [PyTorch](https://pytorch.org/) for the deep learning framework.
+- [YOLOv5](https://github.com/ultralytics/yolov5) for object detection implementation.
 
 ## Environment Setup
 
@@ -158,3 +170,13 @@ To set up the environment for this project, follow these steps:
    ```
 
 Now you have the environment set up with all the necessary dependencies to run the project.
+
+## Running Tests
+
+To run the unit tests and generate a coverage report:
+
+```
+python run_tests.py
+```
+
+This will run all tests and display a coverage report in the terminal. A detailed HTML report will be generated in the `htmlcov/` directory.
