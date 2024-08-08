@@ -68,7 +68,32 @@ For detailed instructions on running each model, refer to `run_models.py`.
 
 ## Results
 
-[Include a summary of key findings, performance metrics, and comparisons between different models]
+### Model Accuracy Comparison
+
+Below is a comparison of the accuracy achieved by different models on the Paddy Disease Classification task:
+
+| Model | Accuracy |
+|-------|----------|
+| ResNet50 | TBD |
+| Inception V3 | TBD |
+| Faster R-CNN | TBD |
+| RetinaNet | TBD |
+| SSD | TBD |
+| YOLOv5 | TBD |
+| KNN | TBD |
+| SVM | TBD |
+
+*Note: The accuracy values are placeholders (TBD) and will be updated once all models have been trained and evaluated.*
+
+[Include a summary of key findings, performance metrics, and additional comparisons between different models]
+
+#### Visualization
+
+```
+[A bar chart or line graph will be inserted here to visually represent the accuracy comparison]
+```
+
+*Note: The visualization will be added once we have the actual accuracy data for all models.*
 
 ## Contributing
 
