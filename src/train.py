@@ -111,18 +111,31 @@ def train_object_detection(model, train_loader, val_loader, num_epochs, learning
 def train(data_dir, model_name, num_epochs=10, batch_size=32, learning_rate=0.001):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
-    train_loader, val_loader, classes = load_data(data_dir, batch_size, model_name)
-    model = get_model(model_name, num_classes=len(classes)).to(device)
-    
-    if model_name in ['resnet50', 'inception_v3']:
-        history = train_classifier(model, train_loader, val_loader, num_epochs, learning_rate, device)
-    elif model_name in ['fasterrcnn', 'retinanet', 'ssd']:
-        history = train_object_detection(model, train_loader, val_loader, num_epochs, learning_rate, device)
+    if model_name in ['resnet50', 'inception_v3', 'fasterrcnn', 'retinanet', 'ssd']:
+        train_loader, val_loader, classes = load_data(data_dir, batch_size, model_name)
+        model = get_model(model_name, num_classes=len(classes)).to(device)
+        
+        if model_name in ['resnet50', 'inception_v3']:
+            history = train_classifier(model, train_loader, val_loader, num_epochs, learning_rate, device)
+        elif model_name in ['fasterrcnn', 'retinanet', 'ssd']:
+            history = train_object_detection(model, train_loader, val_loader, num_epochs, learning_rate, device)
+        
+        save_model(model, f'{model_name}_model.pth')
+        plot_training_history(history)
+    elif model_name == 'yolov5':
+        from src.yolov5_model import train_yolov5
+        train_yolov5(data_dir, epochs=num_epochs, batch_size=batch_size)
+    elif model_name == 'yolov6':
+        from src.yolov6_model import train_yolov6
+        train_yolov6(data_dir, epochs=num_epochs, batch_size=batch_size)
+    elif model_name == 'yolov7':
+        from src.yolov7_model import train_yolov7
+        train_yolov7(data_dir, epochs=num_epochs, batch_size=batch_size)
+    elif model_name == 'yolov8':
+        from src.yolov8_model import train_yolov8
+        train_yolov8(data_dir, epochs=num_epochs, batch_size=batch_size)
     else:
         raise ValueError(f"Unsupported model: {model_name}")
-    
-    save_model(model, f'{model_name}_model.pth')
-    plot_training_history(history)
 
 if __name__ == "__main__":
     import argparse

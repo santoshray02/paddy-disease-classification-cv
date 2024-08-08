@@ -30,6 +30,18 @@ def get_model(model_name, num_classes=None, pretrained=True):
         return retinanet_resnet50_fpn(pretrained=pretrained)
     elif model_name == 'ssd':
         return ssd300_vgg16(pretrained=pretrained)
+    elif model_name == 'yolov5':
+        from src.yolov5_model import load_yolov5
+        return load_yolov5()
+    elif model_name == 'yolov6':
+        from src.yolov6_model import load_yolov6
+        return load_yolov6()
+    elif model_name == 'yolov7':
+        from src.yolov7_model import load_yolov7
+        return load_yolov7()
+    elif model_name == 'yolov8':
+        from src.yolov8_model import load_yolov8
+        return load_yolov8()
     else:
         raise ValueError(f"Unsupported model: {model_name}")
 

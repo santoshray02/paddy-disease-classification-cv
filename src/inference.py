@@ -36,17 +36,36 @@ def predict(image_path, model_path, model_name, class_names=None):
     
     if model_name in ['resnet50', 'inception_v3']:
         model = get_model(model_name, num_classes=len(class_names))
-    else:
-        model = get_model(model_name)
-    
-    load_model(model, model_path)
-    model.to(device)
-    model.eval()
-    
-    if model_name in ['resnet50', 'inception_v3']:
+        load_model(model, model_path)
+        model.to(device)
+        model.eval()
         return predict_classifier(image_path, model, device, class_names)
     elif model_name in ['fasterrcnn', 'retinanet', 'ssd']:
+        model = get_model(model_name)
+        load_model(model, model_path)
+        model.to(device)
+        model.eval()
         return predict_object_detection(image_path, model, device)
+    elif model_name == 'yolov5':
+        from src.yolov5_model import load_yolov5, predict_yolov5
+        model = load_yolov5()
+        load_model(model, model_path)
+        return predict_yolov5(model, image_path)
+    elif model_name == 'yolov6':
+        from src.yolov6_model import load_yolov6, predict_yolov6
+        model = load_yolov6()
+        load_model(model, model_path)
+        return predict_yolov6(model, image_path)
+    elif model_name == 'yolov7':
+        from src.yolov7_model import load_yolov7, predict_yolov7
+        model = load_yolov7()
+        load_model(model, model_path)
+        return predict_yolov7(model, image_path)
+    elif model_name == 'yolov8':
+        from src.yolov8_model import load_yolov8, predict_yolov8
+        model = load_yolov8()
+        load_model(model, model_path)
+        return predict_yolov8(model, image_path)
     else:
         raise ValueError(f"Unsupported model: {model_name}")
 

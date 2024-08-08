@@ -60,11 +60,12 @@ print("python src/knn_model.py --data_dir data/paddy_doctor_dataset --n_neighbor
 print("\nTraining and running inference with SVM:")
 print("python src/svm_model.py --data_dir data/paddy_doctor_dataset --kernel rbf --test_image path/to/test/image.jpg")
 
-# YOLOv5
-print("\nTraining YOLOv5:")
-print("python src/yolov5_model.py train --data data/paddy_doctor_dataset/data.yaml --img 640 --batch 16 --epochs 50 --weights yolov5s.pt")
-print("\nRunning inference with YOLOv5:")
-print("python src/yolov5_model.py detect --weights yolov5s.pt --img 640 --conf 0.25 --source path/to/test/image.jpg")
+# YOLO models
+for yolo_version in ['v5', 'v6', 'v7', 'v8']:
+    print(f"\nTraining YOLO{yolo_version}:")
+    print(f"python src/yolo{yolo_version}_model.py --operation train --data_yaml data/paddy_doctor_dataset/data.yaml --epochs 50 --batch_size 16")
+    print(f"\nRunning inference with YOLO{yolo_version}:")
+    print(f"python src/yolo{yolo_version}_model.py --operation predict --image_path path/to/test/image.jpg")
 
 print("\nNote: Make sure to replace 'path/to/test/image.jpg' with the actual path to your test image.")
 print("Also, ensure that you have the correct class names for classification models.")
