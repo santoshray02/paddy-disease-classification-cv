@@ -51,14 +51,19 @@ def predict(image_path, model_path, model_name, class_names=None):
         raise ValueError(f"Unsupported model: {model_name}")
 
 if __name__ == "__main__":
-    image_path = 'path/to/test/image.jpg'
-    model_path = 'resnet50_model.pth'
-    model_name = 'resnet50'
-    class_names = ['class1', 'class2', 'class3']  # Replace with actual class names
+    import argparse
     
-    prediction = predict(image_path, model_path, model_name, class_names)
+    parser = argparse.ArgumentParser(description='Make predictions using a trained model.')
+    parser.add_argument('--image_path', type=str, required=True, help='Path to the input image')
+    parser.add_argument('--model_path', type=str, required=True, help='Path to the trained model')
+    parser.add_argument('--model_name', type=str, required=True, choices=['resnet50', 'inception_v3', 'fasterrcnn', 'retinanet', 'ssd'], help='Name of the model')
+    parser.add_argument('--class_names', type=str, nargs='+', help='List of class names (for classification models)')
     
-    if model_name in ['resnet50', 'inception_v3']:
+    args = parser.parse_args()
+    
+    prediction = predict(args.image_path, args.model_path, args.model_name, args.class_names)
+    
+    if args.model_name in ['resnet50', 'inception_v3']:
         print(f"Predicted class: {prediction}")
     else:
         print(f"Prediction: {prediction}")

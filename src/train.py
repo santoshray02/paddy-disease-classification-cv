@@ -125,4 +125,15 @@ def train(data_dir, model_name, num_epochs=10, batch_size=32, learning_rate=0.00
     plot_training_history(history)
 
 if __name__ == "__main__":
-    train('data/paddy_doctor_dataset', 'resnet50')
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='Train a model on the Paddy Doctor dataset.')
+    parser.add_argument('--data_dir', type=str, default='data/paddy_doctor_dataset', help='Path to the dataset')
+    parser.add_argument('--model_name', type=str, default='resnet50', choices=['resnet50', 'inception_v3', 'fasterrcnn', 'retinanet', 'ssd'], help='Model to train')
+    parser.add_argument('--num_epochs', type=int, default=10, help='Number of epochs to train')
+    parser.add_argument('--batch_size', type=int, default=32, help='Batch size for training')
+    parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate for training')
+    
+    args = parser.parse_args()
+    
+    train(args.data_dir, args.model_name, args.num_epochs, args.batch_size, args.learning_rate)
