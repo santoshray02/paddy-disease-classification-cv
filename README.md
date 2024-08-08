@@ -68,32 +68,48 @@ For detailed instructions on running each model, refer to `run_models.py`.
 
 ## Results
 
-### Model Accuracy Comparison
+### Model Performance Comparison
 
-Below is a comparison of the accuracy achieved by different models on the Paddy Disease Classification task:
+Below is a comparison of various performance metrics for different models on the Paddy Disease Classification task:
 
-| Model | Accuracy |
-|-------|----------|
-| ResNet50 | TBD |
-| Inception V3 | TBD |
-| Faster R-CNN | TBD |
-| RetinaNet | TBD |
-| SSD | TBD |
-| YOLOv5 | TBD |
-| KNN | TBD |
-| SVM | TBD |
+| Model | Accuracy | Precision | Recall | F1 Score | Inference Time (ms) | Model Size (MB) |
+|-------|----------|-----------|--------|----------|---------------------|-----------------|
+| ResNet50 | TBD | TBD | TBD | TBD | TBD | TBD |
+| Inception V3 | TBD | TBD | TBD | TBD | TBD | TBD |
+| Faster R-CNN | TBD | TBD | TBD | TBD | TBD | TBD |
+| RetinaNet | TBD | TBD | TBD | TBD | TBD | TBD |
+| SSD | TBD | TBD | TBD | TBD | TBD | TBD |
+| YOLOv5 | TBD | TBD | TBD | TBD | TBD | TBD |
+| KNN | TBD | TBD | TBD | TBD | TBD | TBD |
+| SVM | TBD | TBD | TBD | TBD | TBD | TBD |
 
-*Note: The accuracy values are placeholders (TBD) and will be updated once all models have been trained and evaluated.*
+*Note: The values are placeholders (TBD) and will be updated once all models have been trained and evaluated.*
 
 [Include a summary of key findings, performance metrics, and additional comparisons between different models]
 
-#### Visualization
+#### Visualizations
 
 ```
-[A bar chart or line graph will be inserted here to visually represent the accuracy comparison]
+[Multiple charts or graphs will be inserted here to visually represent different aspects of the model comparisons, such as:
+1. Bar chart for accuracy comparison
+2. Scatter plot for accuracy vs. inference time
+3. Radar chart for precision, recall, and F1 score
+4. Bar chart for model sizes]
 ```
 
-*Note: The visualization will be added once we have the actual accuracy data for all models.*
+*Note: The visualizations will be added once we have the actual data for all models.*
+
+### Additional Benchmarks
+
+1. **Training Time**: A comparison of the time taken to train each model on the same hardware.
+2. **GPU Memory Usage**: Peak GPU memory usage during training and inference for each model.
+3. **CPU vs. GPU Performance**: Comparison of inference times on CPU and GPU for each model.
+4. **Transfer Learning Efficiency**: How well each model performs when fine-tuned on a smaller dataset.
+5. **Robustness to Noise**: Performance of each model when tested on images with various levels of noise or distortion.
+
+[Placeholder for additional benchmark results and analysis]
+
+These additional benchmarks will provide a more comprehensive comparison of the models, considering factors beyond just accuracy. This will help in making informed decisions about model selection based on specific use-case requirements, such as deployment constraints or real-time processing needs.
 
 ## Contributing
 
