@@ -21,5 +21,9 @@ pip install yolov7  # for YOLOv7
 pip install seaborn  # for enhanced visualizations
 pip install albumentations  # for advanced data augmentation
 
+# Install testing libraries
+pip install pytest  # for running unit tests
+pip install pytest-cov  # for generating coverage reports
+
 echo "Conda environment '$ENV_NAME' has been created and packages have been installed."
 echo "To activate the environment, use: conda activate $ENV_NAME"
