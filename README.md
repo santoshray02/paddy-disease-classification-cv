@@ -80,6 +80,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contact
 
-[Your Name] - [Your Email]
+Santosh Kumar
 
-Project Link: [https://github.com/yourusername/your-repo-name](https://github.com/yourusername/your-repo-name)
+Project Link: [https://github.com/santoshray02/paddy-disease-classification-cv](https://github.com/santoshray02/paddy-disease-classification-cv)
