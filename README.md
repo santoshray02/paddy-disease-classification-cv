@@ -83,3 +83,30 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 Santosh Kumar
 
 Project Link: [https://github.com/santoshray02/paddy-disease-classification-cv](https://github.com/santoshray02/paddy-disease-classification-cv)
+
+## Environment Setup
+
+To set up the environment for this project, follow these steps:
+
+1. Clone the repository:
+   ```
+   git clone https://github.com/santoshray02/paddy-disease-classification-cv.git
+   cd paddy-disease-classification-cv
+   ```
+
+2. Make the setup script executable:
+   ```
+   chmod +x setup_conda_env.sh
+   ```
+
+3. Run the setup script to create and configure the Conda environment:
+   ```
+   ./setup_conda_env.sh
+   ```
+
+4. Activate the Conda environment:
+   ```
+   conda activate paddy_disease_cv
+   ```
+
+Now you have the environment set up with all the necessary dependencies to run the project.
