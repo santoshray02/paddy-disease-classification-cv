@@ -34,3 +34,29 @@ def evaluate_yolov8(model, data_yaml):
     results = model.val(data=data_yaml)
     metrics = results.results_dict
     return metrics
+
+if __name__ == "__main__":
+    # Load the model
+    model = load_yolov8('s')  # Load small YOLOv8 model
+
+    # Example image path (replace with an actual image path)
+    image_path = "path/to/your/image.jpg"
+
+    # Read the image
+    image = cv2.imread(image_path)
+    if image is None:
+        print(f"Error: Unable to read image at {image_path}")
+        exit(1)
+
+    # Perform prediction
+    results = predict_yolov8(model, image)
+
+    # Process and display results
+    processed_image = process_results(results, image)
+
+    # Display the image (you might need to adjust this based on your environment)
+    cv2.imshow("YOLOv8 Prediction", processed_image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+    print("YOLOv8 prediction completed successfully.")
