@@ -107,14 +107,25 @@ def load_yolo_data(data_dir):
     """
     Prepare data for YOLO models.
     """
+    # Check if the expected subdirectories exist
+    train_dir = os.path.join(data_dir, 'train')
+    val_dir = os.path.join(data_dir, 'valid')
+    test_dir = os.path.join(data_dir, 'test')
+
+    if not os.path.exists(train_dir):
+        train_dir = data_dir  # Use the main directory if 'train' doesn't exist
+
+    # Get the class names (assuming they are the subdirectories in the train directory)
+    class_names = [d for d in os.listdir(train_dir) if os.path.isdir(os.path.join(train_dir, d))]
+
     # Create a YAML file for YOLO training
     yaml_content = f"""
-train: {os.path.join(data_dir, 'train')}
-val: {os.path.join(data_dir, 'valid')}
-test: {os.path.join(data_dir, 'test')}
+train: {train_dir}
+val: {val_dir if os.path.exists(val_dir) else train_dir}
+test: {test_dir if os.path.exists(test_dir) else train_dir}
 
-nc: {len(os.listdir(os.path.join(data_dir, 'train')))}  # number of classes
-names: {os.listdir(os.path.join(data_dir, 'train'))}  # class names
+nc: {len(class_names)}  # number of classes
+names: {class_names}  # class names
     """
     
     yaml_path = os.path.join(data_dir, 'data.yaml')

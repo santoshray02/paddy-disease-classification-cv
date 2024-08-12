@@ -11,7 +11,11 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
     logging.basicConfig(filename=log_file, level=logging.INFO, format='%(asctime)s - %(message)s')
     
     # Load data
-    data_yaml = load_yolo_data(data_dir)
+    try:
+        data_yaml = load_yolo_data(data_dir)
+    except Exception as e:
+        logging.error(f"Error loading data: {str(e)}")
+        raise
     
     # Initialize model
     if model_name.startswith('yolov8'):
