@@ -126,6 +126,8 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
                 losses.backward()
                 optimizer.step()
         
+            lr_scheduler.step()
+            
             avg_loss = total_loss / len(train_loader)
             logging.info(f"Epoch {epoch+1}/{num_epochs}, Average Loss: {avg_loss:.4f}")
             
@@ -147,8 +149,6 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
             
             avg_val_loss = val_loss / len(val_loader)
             logging.info(f"Epoch {epoch+1}/{num_epochs}, Validation Loss: {avg_val_loss:.4f}")
-            
-            lr_scheduler.step()
         
         torch.save(model.state_dict(), os.path.join(output_dir, 'retinanet_model.pth'))
         results = "Training completed for RetinaNet"
