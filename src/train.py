@@ -214,7 +214,7 @@ def train(data_dir, model_name, num_epochs=10, batch_size=32, learning_rate=0.00
         save_model(model, os.path.join(output_dir, f'{model_name}_final_model.pth'))
         plot_training_history(history, output_dir)
     elif model_name in ['yolov5', 'yolov6', 'yolov7', 'yolov8']:
-        yolo_module = __import__(f'src.{model_name}_model', fromlist=[f'train_{model_name}'])
+        yolo_module = __import__(f'{model_name}_model', fromlist=[f'train_{model_name}'])
         train_func = getattr(yolo_module, f'train_{model_name}')
         logging.info(f"Training {model_name.upper()} model")
         train_func(data_dir, epochs=num_epochs, batch_size=batch_size)
