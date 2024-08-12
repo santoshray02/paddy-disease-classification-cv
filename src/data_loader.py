@@ -38,10 +38,18 @@ def load_classification_data(data_dir, batch_size=32, train_ratio=0.7, val_ratio
     train_dir = os.path.join(data_dir, 'train')
 
     # Count the number of classes (folders) in the train directory
-    num_classes = len([name for name in os.listdir(train_dir) if os.path.isdir(os.path.join(train_dir, name))])
+    classes = [name for name in os.listdir(train_dir) if os.path.isdir(os.path.join(train_dir, name))]
+    num_classes = len(classes)
     print(f"Number of classes detected: {num_classes}")
+    print(f"Classes: {classes}")
 
     full_dataset = datasets.ImageFolder(root=train_dir, transform=transform)
+    
+    if num_classes != len(full_dataset.classes):
+        print(f"Warning: Mismatch in number of classes. Detected: {num_classes}, Dataset: {len(full_dataset.classes)}")
+        print(f"Using {len(full_dataset.classes)} classes from the dataset.")
+    
+    num_classes = len(full_dataset.classes)
 
     # Calculate sizes for train, validation, and test sets
     total_size = len(full_dataset)
