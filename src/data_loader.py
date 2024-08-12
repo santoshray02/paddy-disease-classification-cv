@@ -77,29 +77,17 @@ def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
         transforms.ToTensor(),
     ])
 
-    # Check for different possible data directory structures
-    possible_structures = [
-        (os.path.join(data_dir, "_annotations.coco.json"), data_dir),
-        (os.path.join(data_dir, "train", "_annotations.coco.json"), os.path.join(data_dir, "train")),
-        (os.path.join(data_dir, "annotations.json"), data_dir),
-    ]
+    # For paddy disease classification dataset
+    train_dir = os.path.join(data_dir, 'train')
+    ann_file = os.path.join(data_dir, 'train.json')
 
-    ann_file = None
-    root_dir = None
-
-    for ann_path, root in possible_structures:
-        if os.path.exists(ann_path):
-            ann_file = ann_path
-            root_dir = root
-            break
-
-    if ann_file is None or root_dir is None:
-        raise FileNotFoundError(f"Could not find annotation file in {data_dir}")
+    if not os.path.exists(train_dir) or not os.path.exists(ann_file):
+        raise FileNotFoundError(f"Could not find train directory or annotation file in {data_dir}")
 
     print(f"Using annotation file: {ann_file}")
-    print(f"Using root directory: {root_dir}")
+    print(f"Using train directory: {train_dir}")
 
-    dataset = CocoDetection(root=root_dir, annFile=ann_file, transform=transform)
+    dataset = CocoDetection(root=train_dir, annFile=ann_file, transform=transform)
 
     # Split the dataset into train and validation sets
     dataset_size = len(dataset)
