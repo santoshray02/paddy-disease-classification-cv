@@ -7,7 +7,7 @@ from data_loader import load_classification_data
 from svm_model import train_svm
 from utils import plot_training_history
 
-def train(data_dir, model_name, batch_size=32, output_dir='./output'):
+def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs=10, learning_rate=0.001):
     os.makedirs(output_dir, exist_ok=True)
     
     # Set up logging
@@ -34,7 +34,7 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output'):
         
         # Train SVM
         logging.info("Training SVM model")
-        svm_model = train_svm(X_train, y_train)
+        svm_model = train_svm(X_train, y_train, num_epochs=num_epochs, learning_rate=learning_rate)
         
         # Evaluate the model
         accuracy = svm_model.score(X_test, y_test)
@@ -60,7 +60,9 @@ if __name__ == "__main__":
     parser.add_argument('--model_name', type=str, default='svm', choices=['svm'], help='Model to train')
     parser.add_argument('--batch_size', type=int, default=32, help='Batch size for training')
     parser.add_argument('--output_dir', type=str, default='./output', help='Directory to save output files')
+    parser.add_argument('--num_epochs', type=int, default=10, help='Number of epochs for training')
+    parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate for training')
     
     args = parser.parse_args()
     
-    train(args.data_dir, args.model_name, args.batch_size, args.output_dir)
+    train(args.data_dir, args.model_name, args.batch_size, args.output_dir, args.num_epochs, args.learning_rate)
