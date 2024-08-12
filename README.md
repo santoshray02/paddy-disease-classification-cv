@@ -3,8 +3,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/release/python-380/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/santoshray02/paddy-disease-classification-cv)
-[![Coverage Status](https://img.shields.io/badge/coverage-80%25-yellowgreen)](https://github.com/santoshray02/paddy-disease-classification-cv)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/santoshray02/paddy-disease-classification-cv/tree/master)
+[![Coverage Status](https://img.shields.io/badge/coverage-80%25-yellowgreen)](https://github.com/santoshray02/paddy-disease-classification-cv/tree/master)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
 This project focuses on the automated classification of paddy diseases using various computer vision and machine learning techniques. We utilize the "Paddy Doctor" dataset for training and evaluation of our models.
@@ -136,7 +136,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 Santosh Kumar
 
-Project Link: [https://github.com/santoshray02/paddy-disease-classification-cv](https://github.com/santoshray02/paddy-disease-classification-cv)
+Project Link: [https://github.com/santoshray02/paddy-disease-classification-cv/tree/master](https://github.com/santoshray02/paddy-disease-classification-cv/tree/master)
 
 ## Acknowledgements
 
@@ -152,6 +152,7 @@ To set up the environment for this project, follow these steps:
    ```
    git clone https://github.com/santoshray02/paddy-disease-classification-cv.git
    cd paddy-disease-classification-cv
+   git checkout master
    ```
 
 2. Make the setup script executable:
