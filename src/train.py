@@ -120,7 +120,7 @@ def train_object_detection(model, train_loader, val_loader, num_epochs, learning
         
         for images, targets in tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}"):
             images = list(image.to(device) for image in images)
-            targets = [t.to(device) for t in targets]
+            targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
     
             optimizer.zero_grad()
             with amp.autocast():
@@ -141,7 +141,7 @@ def train_object_detection(model, train_loader, val_loader, num_epochs, learning
         with torch.no_grad():
             for images, targets in val_loader:
                 images = list(image.to(device) for image in images)
-                targets = [t.to(device) for t in targets]
+                targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
         
                 with amp.autocast():
                     loss_dict = model(images, targets)
