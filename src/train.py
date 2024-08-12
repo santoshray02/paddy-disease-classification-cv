@@ -1,7 +1,8 @@
 import os
 import logging
 from ultralytics import YOLO
-from data_loader import load_yolo_data, load_object_detection_data
+from data_loader import load_yolo_data, load_object_detection_data, collate_fn
+import torchvision
 import torch
 from torchvision.models.detection import retinanet_resnet50_fpn
 from torchvision.models.detection.retinanet import RetinaNet_ResNet50_FPN_Weights
@@ -80,11 +81,12 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
             hyp={'lr0': learning_rate}
         )
     elif model_name == 'retinanet':
-        train_loader, val_loader = load_object_detection_data(data_dir, batch_size)
+        train_loader, val_loader, _ = load_object_detection_data(data_dir, batch_size)
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model.to(device)
         params = [p for p in model.parameters() if p.requires_grad]
         optimizer = torch.optim.SGD(params, lr=learning_rate, momentum=0.9, weight_decay=0.0005)
+        lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
         
         for epoch in range(num_epochs):
             model.train()
@@ -104,7 +106,22 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
             avg_loss = total_loss / len(train_loader)
             logging.info(f"Epoch {epoch+1}/{num_epochs}, Average Loss: {avg_loss:.4f}")
             
-            logging.info(f"Epoch {epoch+1}/{num_epochs}, Loss: {losses.item()}")
+            # Evaluate on validation set
+            model.eval()
+            val_loss = 0
+            with torch.no_grad():
+                for images, targets in val_loader:
+                    images = list(image.to(device) for image in images)
+                    targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+                    
+                    loss_dict = model(images, targets)
+                    losses = sum(loss for loss in loss_dict.values())
+                    val_loss += losses.item()
+            
+            avg_val_loss = val_loss / len(val_loader)
+            logging.info(f"Epoch {epoch+1}/{num_epochs}, Validation Loss: {avg_val_loss:.4f}")
+            
+            lr_scheduler.step()
         
         torch.save(model.state_dict(), os.path.join(output_dir, 'retinanet_model.pth'))
         results = "Training completed for RetinaNet"

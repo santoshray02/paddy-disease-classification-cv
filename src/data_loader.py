@@ -74,34 +74,38 @@ def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
     """
     Load and preprocess data for object detection models.
     """
-    transform = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ])
-
-    # For paddy disease classification dataset
+    # Assuming COCO-format annotations
     train_dir = os.path.join(data_dir, 'train')
+    val_dir = os.path.join(data_dir, 'val')
+    train_ann_file = os.path.join(train_dir, 'annotations.json')
+    val_ann_file = os.path.join(val_dir, 'annotations.json')
 
-    if not os.path.exists(train_dir):
-        raise FileNotFoundError(f"Could not find train directory in {data_dir}")
+    if not os.path.exists(train_dir) or not os.path.exists(val_dir):
+        raise FileNotFoundError(f"Could not find train or val directory in {data_dir}")
 
     print(f"Using train directory: {train_dir}")
+    print(f"Using val directory: {val_dir}")
 
-    dataset = datasets.ImageFolder(root=train_dir, transform=transform)
+    # Load COCO dataset
+    train_dataset = CocoDetection(root=train_dir, annFile=train_ann_file, transform=get_transform(train=True))
+    val_dataset = CocoDetection(root=val_dir, annFile=val_ann_file, transform=get_transform(train=False))
 
-    # Split the dataset into train and validation sets
-    dataset_size = len(dataset)
-    train_size = int(train_ratio * dataset_size)
-    val_size = dataset_size - train_size
-    train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
+    # Create data loaders
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-
-    classes = dataset.classes
+    # Get class names
+    coco = COCO(train_ann_file)
+    classes = [cat['name'] for cat in coco.loadCats(coco.getCatIds())]
 
     return train_loader, val_loader, classes
+
+def get_transform(train):
+    transforms = []
+    transforms.append(T.ToTensor())
+    if train:
+        transforms.append(T.RandomHorizontalFlip(0.5))
+    return T.Compose(transforms)
 
 def load_yolo_data(data_dir):
     """
