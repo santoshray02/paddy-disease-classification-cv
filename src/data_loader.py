@@ -79,10 +79,12 @@ def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
 
     # For paddy disease classification dataset
     train_dir = os.path.join(data_dir, 'train')
-    ann_file = os.path.join(data_dir, 'train.json')
+    ann_file = os.path.join(data_dir, 'train', '_annotations.coco.json')
 
-    if not os.path.exists(train_dir) or not os.path.exists(ann_file):
-        raise FileNotFoundError(f"Could not find train directory or annotation file in {data_dir}")
+    if not os.path.exists(train_dir):
+        raise FileNotFoundError(f"Could not find train directory in {data_dir}")
+    if not os.path.exists(ann_file):
+        raise FileNotFoundError(f"Could not find annotation file: {ann_file}")
 
     print(f"Using annotation file: {ann_file}")
     print(f"Using train directory: {train_dir}")
