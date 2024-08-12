@@ -1,4 +1,4 @@
-from sklearn.svm import SGDClassifier
+from sklearn.linear_model import SGDClassifier
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import accuracy_score
 import numpy as np
