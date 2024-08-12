@@ -1,42 +1,47 @@
-from sklearn.svm import SVC
-from sklearn.model_selection import GridSearchCV
+from sklearn.svm import LinearSVC
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.model_selection import RandomizedSearchCV
 from sklearn.metrics import accuracy_score, classification_report
+from scipy.stats import uniform, randint
 import numpy as np
 import logging
 
 def train_svm(X, y, num_epochs=10, learning_rate=0.001, kernel='rbf'):
-    # Define the parameter grid
-    param_grid = {
-        'C': [0.1, 1, 10, 100],
-        'gamma': ['scale', 'auto', 0.1, 1],
-        'kernel': ['rbf', 'poly', 'sigmoid'],
-        'max_iter': [num_epochs],  # Use num_epochs as max_iter
-        'tol': [learning_rate]  # Use learning_rate as tolerance
+    # Define the parameter distribution
+    param_dist = {
+        'C': uniform(0.1, 100),
+        'max_iter': randint(num_epochs, num_epochs * 10),
+        'tol': uniform(learning_rate / 10, learning_rate * 10)
     }
     
     # Create a base model
-    svm = SVC()
+    svm = LinearSVC(dual=False)
     
-    # Perform grid search with cross-validation
-    grid_search = GridSearchCV(svm, param_grid, cv=5, n_jobs=-1, verbose=1)
-    grid_search.fit(X, y)
+    # Perform randomized search with cross-validation
+    random_search = RandomizedSearchCV(svm, param_distributions=param_dist, 
+                                       n_iter=20, cv=3, n_jobs=-1, verbose=1, random_state=42)
+    random_search.fit(X, y)
     
     # Get the best model
-    best_model = grid_search.best_estimator_
+    best_model = random_search.best_estimator_
+    
+    # Calibrate probabilities
+    calibrated_svc = CalibratedClassifierCV(best_model, cv=3)
+    calibrated_svc.fit(X, y)
     
     # Log the best parameters and score
-    logging.info(f"Best parameters: {grid_search.best_params_}")
-    logging.info(f"Best cross-validation score: {grid_search.best_score_:.4f}")
+    logging.info(f"Best parameters: {random_search.best_params_}")
+    logging.info(f"Best cross-validation score: {random_search.best_score_:.4f}")
     
     # Evaluate the model on the entire dataset
-    y_pred = best_model.predict(X)
+    y_pred = calibrated_svc.predict(X)
     accuracy = accuracy_score(y, y_pred)
     
     logging.info(f"SVM Accuracy on entire dataset: {accuracy:.4f}")
     logging.info("\nClassification Report:")
     logging.info(classification_report(y, y_pred))
     
-    return best_model
+    return calibrated_svc
 
 def predict_svm(model, X):
     return model.predict(X)

@@ -18,12 +18,23 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
         # Load and preprocess data
         train_data, val_data, _, classes = load_classification_data(data_dir, batch_size)
         
-        # Combine train and validation data
-        X = np.concatenate([batch[0].numpy() for batch in train_data] + [batch[0].numpy() for batch in val_data])
-        y = np.concatenate([batch[1].numpy() for batch in train_data] + [batch[1].numpy() for batch in val_data])
+        # Initialize lists to store data
+        X_list, y_list = [], []
         
-        # Flatten the images
-        X = X.reshape(X.shape[0], -1)
+        # Process data in batches
+        for batch in train_data:
+            X_batch, y_batch = batch
+            X_list.append(X_batch.numpy().reshape(X_batch.shape[0], -1))
+            y_list.append(y_batch.numpy())
+        
+        for batch in val_data:
+            X_batch, y_batch = batch
+            X_list.append(X_batch.numpy().reshape(X_batch.shape[0], -1))
+            y_list.append(y_batch.numpy())
+        
+        # Combine all batches
+        X = np.concatenate(X_list)
+        y = np.concatenate(y_list)
         
         # Scale the features
         scaler = StandardScaler()
