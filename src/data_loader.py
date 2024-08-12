@@ -77,13 +77,31 @@ def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
         transforms.ToTensor(),
     ])
 
-    train_dataset = CocoDetection(root=f"{data_dir}/train", annFile=f"{data_dir}/train/_annotations.coco.json", transform=transform)
-    val_dataset = CocoDetection(root=f"{data_dir}/valid", annFile=f"{data_dir}/valid/_annotations.coco.json", transform=transform)
+    # Check if the annotations file is in the main data directory
+    main_ann_file = os.path.join(data_dir, "_annotations.coco.json")
+    if os.path.exists(main_ann_file):
+        train_dataset = CocoDetection(root=data_dir, annFile=main_ann_file, transform=transform)
+        val_dataset = train_dataset  # Use the same dataset for validation if no separate validation set
+    else:
+        train_dataset = CocoDetection(root=os.path.join(data_dir, "train"), 
+                                      annFile=os.path.join(data_dir, "train", "_annotations.coco.json"), 
+                                      transform=transform)
+        val_dataset = CocoDetection(root=os.path.join(data_dir, "valid"), 
+                                    annFile=os.path.join(data_dir, "valid", "_annotations.coco.json"), 
+                                    transform=transform)
+
+    # Split the dataset if using a single dataset for both training and validation
+    if train_dataset == val_dataset:
+        dataset_size = len(train_dataset)
+        train_size = int(train_ratio * dataset_size)
+        val_size = dataset_size - train_size
+        train_dataset, val_dataset = random_split(train_dataset, [train_size, val_size])
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
 
-    coco = COCO(f"{data_dir}/train/_annotations.coco.json")
+    # Use the main annotation file if it exists, otherwise use the train annotation file
+    coco = COCO(main_ann_file if os.path.exists(main_ann_file) else os.path.join(data_dir, "train", "_annotations.coco.json"))
     classes = [cat['name'] for cat in coco.loadCats(coco.getCatIds())]
 
     return train_loader, val_loader, classes
