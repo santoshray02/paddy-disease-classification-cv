@@ -81,60 +81,55 @@ def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
 
     print(f"Using data directory: {data_dir}")
 
-    # Find all image files recursively
-    image_files = []
-    for root, _, files in os.walk(data_dir):
-        for file in files:
-            if file.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif')):
-                image_files.append(os.path.join(root, file))
-
-    if not image_files:
-        raise FileNotFoundError(f"No valid image files found in {data_dir}")
-
-    # Create a custom dataset
-    class CustomDataset(torch.utils.data.Dataset):
-        def __init__(self, image_files, transform=None):
-            self.image_files = image_files
-            self.transform = transform
-
-        def __len__(self):
-            return len(self.image_files)
-
-        def __getitem__(self, idx):
-            img_path = self.image_files[idx]
-            image = Image.open(img_path).convert("RGB")
-            
-            if self.transform:
-                image = self.transform(image)
-            
-            # For now, we're creating dummy targets. You'll need to modify this
-            # to load actual annotations if available.
-            target = {}
-            target["boxes"] = torch.tensor([[0, 0, 10, 10]], dtype=torch.float32)
-            target["labels"] = torch.tensor([1], dtype=torch.int64)
-            
-            return image, target
-
-    # Create the full dataset
-    full_dataset = CustomDataset(image_files, transform=get_transform(train=True))
+    # Assume the data is organized in a structure similar to COCO dataset
+    train_dir = os.path.join(data_dir, 'train')
+    val_dir = os.path.join(data_dir, 'valid')
     
-    # Split the dataset into train and validation sets
-    train_size = int(train_ratio * len(full_dataset))
-    val_size = len(full_dataset) - train_size
-    train_dataset, val_dataset = torch.utils.data.random_split(full_dataset, [train_size, val_size])
+    # Get class names from subdirectories
+    class_names = [d for d in os.listdir(train_dir) if os.path.isdir(os.path.join(train_dir, d))]
+    num_classes = len(class_names)
     
-    # Apply different transforms to validation set
-    val_dataset.dataset.transform = get_transform(train=False)
+    # Create custom datasets
+    train_dataset = CustomDataset(train_dir, class_names, get_transform(train=True))
+    val_dataset = CustomDataset(val_dir, class_names, get_transform(train=False))
 
     # Create data loaders
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
 
-    # For now, we're using dummy class names. You'll need to modify this
-    # to load actual class names if available.
-    classes = ["background", "object"]
+    return train_loader, val_loader, class_names
 
-    return train_loader, val_loader, classes
+class CustomDataset(torch.utils.data.Dataset):
+    def __init__(self, root, class_names, transforms=None):
+        self.root = root
+        self.transforms = transforms
+        self.class_names = class_names
+        self.imgs = list(sorted(os.listdir(root)))
+
+    def __getitem__(self, idx):
+        img_path = os.path.join(self.root, self.imgs[idx])
+        img = Image.open(img_path).convert("RGB")
+        
+        # For this example, we're creating dummy bounding boxes and labels
+        # In a real scenario, you would load this information from annotation files
+        num_objs = 3  # Assume 3 objects per image for this example
+        boxes = torch.as_tensor([[0, 0, 100, 100], [50, 50, 150, 150], [200, 200, 300, 300]], dtype=torch.float32)
+        labels = torch.randint(0, len(self.class_names), (num_objs,), dtype=torch.int64)
+        
+        target = {}
+        target["boxes"] = boxes
+        target["labels"] = labels
+        target["image_id"] = torch.tensor([idx])
+        target["area"] = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
+        target["iscrowd"] = torch.zeros((num_objs,), dtype=torch.int64)
+
+        if self.transforms is not None:
+            img, target = self.transforms(img, target)
+
+        return img, target
+
+    def __len__(self):
+        return len(self.imgs)
 
 def get_transform(train):
     transforms = []
@@ -142,6 +137,15 @@ def get_transform(train):
     if train:
         transforms.append(T.RandomHorizontalFlip(0.5))
     return T.Compose(transforms)
+
+class Compose:
+    def __init__(self, transforms):
+        self.transforms = transforms
+
+    def __call__(self, image, target):
+        for t in self.transforms:
+            image, target = t(image, target)
+        return image, target
 
 def load_yolo_data(data_dir):
     """

@@ -49,13 +49,9 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
         from yolov7 import YOLOv7
         model = YOLOv7(model_name)
     elif model_name == 'retinanet':
-        if num_classes is None:
-            logging.error("Number of classes must be specified for RetinaNet")
-            raise ValueError("Number of classes must be specified for RetinaNet")
-        model = retinanet_resnet50_fpn(weights=RetinaNet_ResNet50_FPN_Weights.DEFAULT)
-        in_features = model.head.classification_head.conv[0].out_channels
-        model.head.classification_head.num_classes = num_classes
-        model.head.classification_head.conv = torch.nn.Conv2d(in_features, num_classes * model.head.classification_head.num_anchors, kernel_size=3, stride=1, padding=1)
+        train_loader, val_loader, classes = load_object_detection_data(data_dir, batch_size)
+        num_classes = len(classes)
+        model = retinanet_resnet50_fpn(num_classes=num_classes, pretrained_backbone=True)
     else:
         logging.error(f"Unsupported model: {model_name}")
         raise ValueError(f"Unsupported model: {model_name}")
