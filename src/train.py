@@ -80,7 +80,7 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
             hyp={'lr0': learning_rate}
         )
     elif model_name == 'retinanet':
-        train_loader, val_loader, _ = load_object_detection_data(data_dir, batch_size)
+        train_loader, val_loader = load_object_detection_data(data_dir, batch_size)
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model.to(device)
         params = [p for p in model.parameters() if p.requires_grad]
@@ -88,16 +88,21 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
         
         for epoch in range(num_epochs):
             model.train()
+            total_loss = 0
             for images, targets in train_loader:
                 images = list(image.to(device) for image in images)
                 targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-                
+            
                 loss_dict = model(images, targets)
                 losses = sum(loss for loss in loss_dict.values())
-                
+                total_loss += losses.item()
+            
                 optimizer.zero_grad()
                 losses.backward()
                 optimizer.step()
+        
+            avg_loss = total_loss / len(train_loader)
+            logging.info(f"Epoch {epoch+1}/{num_epochs}, Average Loss: {avg_loss:.4f}")
             
             logging.info(f"Epoch {epoch+1}/{num_epochs}, Loss: {losses.item()}")
         
