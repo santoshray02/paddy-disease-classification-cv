@@ -1,35 +1,12 @@
 import os
 import sys
 import logging
-
-def check_imports():
-    required_packages = [
-        'torch', 'tqdm', 'tensorboard'
-    ]
-    missing_packages = []
-    
-    for package in required_packages:
-        try:
-            __import__(package)
-        except ImportError:
-            missing_packages.append(package)
-    
-    if missing_packages:
-        print(f"Error: The following required packages are missing: {', '.join(missing_packages)}")
-        print("Please install them using: pip install -r requirements.txt")
-        sys.exit(1)
-
-check_imports()
-
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from tqdm import tqdm
-from data_loader import load_data
-from models import get_model
-from utils import save_model, plot_training_history
-import torch.cuda.amp as amp
-from torch.utils.tensorboard import SummaryWriter
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from data_loader import load_classification_data
+from svm_model import train_svm, predict_svm
+from utils import plot_training_history
 
 def train_classifier(model, train_loader, val_loader, num_epochs, learning_rate, device, output_dir):
     if torch.cuda.is_available():
@@ -175,49 +152,40 @@ def train(data_dir, model_name, num_epochs=10, batch_size=32, learning_rate=0.00
     log_file = os.path.join(output_dir, f'{model_name}_training.log')
     logging.basicConfig(filename=log_file, level=logging.INFO, format='%(asctime)s - %(message)s')
     
-    try:
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        logging.info(f"Using device: {device}")
-    except RuntimeError as e:
-        if 'CUDA' in str(e):
-            logging.error(f"Error: {e}")
-            logging.error("Please ensure your CUDA-enabled GPU is compatible with the current PyTorch installation.")
-            logging.error("You can check the compatibility at https://pytorch.org/get-started/locally/")
-            device = torch.device("cpu")
-            logging.info("Falling back to CPU for training.")
-        else:
-            raise e
-    
-    if model_name in ['resnet50', 'inception_v3', 'fasterrcnn', 'retinanet', 'ssd']:
-        train_loader, val_loader, test_loader, classes = load_data(data_dir, batch_size, model_name)
-        num_classes = len(classes) if classes else None
-        logging.info(f"Number of classes from data loader: {num_classes}")
-        logging.info(f"Classes: {classes}")
-        model = get_model(model_name, num_classes=num_classes)
+    if model_name == 'svm':
+        # Load and preprocess data
+        train_data, val_data, _, classes = load_classification_data(data_dir, batch_size)
         
-        if torch.cuda.device_count() > 1:
-            logging.info(f"Using {torch.cuda.device_count()} GPUs!")
-            model = nn.DataParallel(model)
+        # Combine train and validation data
+        X = np.concatenate([batch[0].numpy() for batch in train_data] + [batch[0].numpy() for batch in val_data])
+        y = np.concatenate([batch[1].numpy() for batch in train_data] + [batch[1].numpy() for batch in val_data])
         
-        model = model.to(device)
+        # Flatten the images
+        X = X.reshape(X.shape[0], -1)
         
-        if model_name in ['resnet50', 'inception_v3']:
-            history = train_classifier(model, train_loader, val_loader, num_epochs, learning_rate, device, output_dir)
-        elif model_name in ['fasterrcnn', 'retinanet', 'ssd']:
-            # Use a lower learning rate for object detection models
-            od_learning_rate = learning_rate * 0.1
-            logging.info(f"Adjusting learning rate for object detection: {od_learning_rate}")
-            history = train_object_detection(model, train_loader, val_loader, num_epochs, od_learning_rate, device, output_dir)
+        # Scale the features
+        scaler = StandardScaler()
+        X = scaler.fit_transform(X)
         
-        # You can use test_loader for final evaluation if needed
+        # Split the data
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
         
-        save_model(model, os.path.join(output_dir, f'{model_name}_final_model.pth'))
+        # Train SVM
+        logging.info("Training SVM model")
+        svm_model = train_svm(X_train, y_train)
+        
+        # Evaluate the model
+        accuracy = svm_model.score(X_test, y_test)
+        logging.info(f"SVM Test Accuracy: {accuracy:.4f}")
+        
+        # Save the model
+        import joblib
+        joblib.dump(svm_model, os.path.join(output_dir, 'svm_model.joblib'))
+        logging.info(f"SVM model saved to {os.path.join(output_dir, 'svm_model.joblib')}")
+        
+        # Plot training history (not applicable for SVM, but you can create a simple accuracy plot)
+        history = {'test_accuracy': [accuracy]}
         plot_training_history(history, output_dir)
-    elif model_name in ['yolov5', 'yolov6', 'yolov7', 'yolov8']:
-        yolo_module = __import__(f'{model_name}_model', fromlist=[f'train_{model_name}'])
-        train_func = getattr(yolo_module, f'train_{model_name}')
-        logging.info(f"Training {model_name.upper()} model")
-        train_func(data_dir, model_size='s', epochs=num_epochs, batch_size=batch_size)
     else:
         logging.error(f"Unsupported model: {model_name}")
         raise ValueError(f"Unsupported model: {model_name}")
@@ -227,10 +195,10 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='Train a model on the Paddy Doctor dataset.')
     parser.add_argument('--data_dir', type=str, default='data/paddy-disease-classification', help='Path to the dataset')
-    parser.add_argument('--model_name', type=str, default='resnet50', choices=['resnet50', 'inception_v3', 'fasterrcnn', 'retinanet', 'ssd', 'yolov5', 'yolov6', 'yolov7', 'yolov8'], help='Model to train')
-    parser.add_argument('--num_epochs', type=int, default=10, help='Number of epochs to train')
+    parser.add_argument('--model_name', type=str, default='svm', choices=['svm'], help='Model to train')
+    parser.add_argument('--num_epochs', type=int, default=10, help='Number of epochs to train (not used for SVM)')
     parser.add_argument('--batch_size', type=int, default=32, help='Batch size for training')
-    parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate for training')
+    parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate for training (not used for SVM)')
     parser.add_argument('--output_dir', type=str, default='./output', help='Directory to save output files')
     
     args = parser.parse_args()
