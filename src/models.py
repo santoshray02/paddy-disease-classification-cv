@@ -12,7 +12,9 @@ class PaddyDiseaseClassifier(nn.Module):
             num_ftrs = self.base_model.fc.in_features
             self.base_model.fc = nn.Linear(num_ftrs, num_classes)
         elif model_name == 'inception_v3':
-            self.base_model = models.inception_v3(pretrained=True, aux_logits=False)
+            self.base_model = models.inception_v3(pretrained=True, aux_logits=True)
+            self.base_model.aux_logits = False
+            self.base_model.AuxLogits = None
             self.base_model.Conv2d_1a_3x3.conv = nn.Conv2d(3, 32, kernel_size=3, stride=2, padding=1, bias=False)
             self.base_model.Conv2d_2a_3x3.conv = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1, bias=False)
             self.base_model.Conv2d_2b_3x3.conv = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1, bias=False)
