@@ -115,7 +115,9 @@ def train(data_dir, model_name, num_epochs=10, batch_size=32, learning_rate=0.00
     
     if model_name in ['resnet50', 'inception_v3', 'fasterrcnn', 'retinanet', 'ssd']:
         train_loader, val_loader, test_loader, classes = load_data(data_dir, batch_size, model_name)
-        model = get_model(model_name, num_classes=len(classes)).to(device)
+        num_classes = len(classes)
+        print(f"Number of classes: {num_classes}")
+        model = get_model(model_name, num_classes=num_classes).to(device)
         
         if model_name in ['resnet50', 'inception_v3']:
             history = train_classifier(model, train_loader, val_loader, num_epochs, learning_rate, device)

@@ -19,6 +19,7 @@ class PaddyDiseaseClassifier(nn.Module):
             raise ValueError(f"Unsupported model: {model_name}")
         
         print(f"Initialized {model_name} with {num_classes} output classes")
+        self.num_classes = num_classes  # Store the number of classes
 
     def forward(self, x):
         return self.base_model(x)
