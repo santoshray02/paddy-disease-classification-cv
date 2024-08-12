@@ -52,7 +52,7 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
     elif model_name == 'retinanet':
         train_loader, val_loader, classes = load_object_detection_data(data_dir, batch_size)
         num_classes = len(classes)
-        model = retinanet_resnet50_fpn(num_classes=num_classes, pretrained_backbone=True)
+        model = retinanet_resnet50_fpn(num_classes=num_classes, weights=RetinaNet_ResNet50_FPN_Weights.DEFAULT)
     else:
         logging.error(f"Unsupported model: {model_name}")
         raise ValueError(f"Unsupported model: {model_name}")
@@ -100,12 +100,12 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
             total_loss = 0
             for images, targets in train_loader:
                 images = list(image.to(device) for image in images)
-                targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-            
+                targets = [{k: v.to(device) for k, v in t.items()} if isinstance(t, dict) else t.to(device) for t in targets]
+        
                 loss_dict = model(images, targets)
                 losses = sum(loss for loss in loss_dict.values())
                 total_loss += losses.item()
-            
+        
                 optimizer.zero_grad()
                 losses.backward()
                 optimizer.step()
@@ -119,8 +119,8 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
             with torch.no_grad():
                 for images, targets in val_loader:
                     images = list(image.to(device) for image in images)
-                    targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-                    
+                    targets = [{k: v.to(device) for k, v in t.items()} if isinstance(t, dict) else t.to(device) for t in targets]
+                
                     loss_dict = model(images, targets)
                     losses = sum(loss for loss in loss_dict.values())
                     val_loss += losses.item()
