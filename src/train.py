@@ -110,7 +110,7 @@ def train_object_detection(model, train_loader, val_loader, num_epochs, learning
     return history
 
 def train(data_dir, model_name, num_epochs=10, batch_size=32, learning_rate=0.001):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cpu")  # Always start with CPU
     print(f"Using device: {device}")
     
     if model_name in ['resnet50', 'inception_v3', 'fasterrcnn', 'retinanet', 'ssd']:
@@ -118,23 +118,9 @@ def train(data_dir, model_name, num_epochs=10, batch_size=32, learning_rate=0.00
         model = get_model(model_name, num_classes=len(classes)).to(device)
         
         if model_name in ['resnet50', 'inception_v3']:
-            try:
-                history = train_classifier(model, train_loader, val_loader, num_epochs, learning_rate, device)
-            except RuntimeError as e:
-                print(f"CUDA error occurred: {e}")
-                print("Attempting to continue with CPU...")
-                device = torch.device("cpu")
-                model = model.to(device)
-                history = train_classifier(model, train_loader, val_loader, num_epochs, learning_rate, device)
+            history = train_classifier(model, train_loader, val_loader, num_epochs, learning_rate, device)
         elif model_name in ['fasterrcnn', 'retinanet', 'ssd']:
-            try:
-                history = train_object_detection(model, train_loader, val_loader, num_epochs, learning_rate, device)
-            except RuntimeError as e:
-                print(f"CUDA error occurred: {e}")
-                print("Attempting to continue with CPU...")
-                device = torch.device("cpu")
-                model = model.to(device)
-                history = train_object_detection(model, train_loader, val_loader, num_epochs, learning_rate, device)
+            history = train_object_detection(model, train_loader, val_loader, num_epochs, learning_rate, device)
         
         # You can use test_loader for final evaluation if needed
         

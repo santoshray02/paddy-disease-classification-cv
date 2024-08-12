@@ -17,6 +17,8 @@ class PaddyDiseaseClassifier(nn.Module):
             self.base_model.fc = nn.Linear(num_ftrs, num_classes)
         else:
             raise ValueError(f"Unsupported model: {model_name}")
+        
+        print(f"Initialized {model_name} with {num_classes} output classes")
 
     def forward(self, x):
         return self.base_model(x)
