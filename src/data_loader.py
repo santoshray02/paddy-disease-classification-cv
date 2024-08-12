@@ -19,7 +19,7 @@ def load_data(data_dir, batch_size, model_type, train_ratio=0.8):
     else:
         raise ValueError(f"Unsupported model type: {model_type}")
 
-def load_classification_data(data_dir, batch_size=32, train_ratio=0.8):
+def load_classification_data(data_dir, batch_size=32, train_ratio=0.7, val_ratio=0.15):
     """
     Load and preprocess data for classification models.
     """
@@ -35,26 +35,27 @@ def load_classification_data(data_dir, batch_size=32, train_ratio=0.8):
     #     class1/
     #     class2/
     #     ...
-    #   test/
-    #     class1/
-    #     class2/
-    #     ...
     train_dir = os.path.join(data_dir, 'train')
-    test_dir = os.path.join(data_dir, 'test')
 
-    train_dataset = datasets.ImageFolder(root=train_dir, transform=transform)
-    test_dataset = datasets.ImageFolder(root=test_dir, transform=transform)
+    full_dataset = datasets.ImageFolder(root=train_dir, transform=transform)
 
-    # Split train dataset into train and validation
-    train_size = int(train_ratio * len(train_dataset))
-    val_size = len(train_dataset) - train_size
-    train_dataset, val_dataset = random_split(train_dataset, [train_size, val_size])
+    # Calculate sizes for train, validation, and test sets
+    total_size = len(full_dataset)
+    train_size = int(train_ratio * total_size)
+    val_size = int(val_ratio * total_size)
+    test_size = total_size - train_size - val_size
+
+    # Split the dataset
+    train_dataset, val_dataset, test_dataset = random_split(
+        full_dataset, [train_size, val_size, test_size],
+        generator=torch.Generator().manual_seed(42)  # For reproducibility
+    )
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
-    return train_loader, val_loader, test_loader, train_dataset.dataset.classes
+    return train_loader, val_loader, test_loader, full_dataset.classes
 
 def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
     """
