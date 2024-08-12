@@ -91,20 +91,21 @@ def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
     num_classes = len(class_names)
     
     # Create custom dataset
-    full_dataset = CustomDataset(train_dir, class_names, get_transform(train=True))
+    full_dataset = CustomDataset(train_dir, class_names, transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ]))
     
     # Split the dataset into train and validation sets
     dataset_size = len(full_dataset)
     train_size = int(train_ratio * dataset_size)
     val_size = dataset_size - train_size
     train_dataset, val_dataset = torch.utils.data.random_split(full_dataset, [train_size, val_size])
-    
-    # Apply different transforms to validation set
-    val_dataset.dataset = CustomDataset(train_dir, class_names, get_transform(train=False))
 
     # Create data loaders
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
     return train_loader, val_loader, class_names
 
@@ -113,29 +114,26 @@ class CustomDataset(torch.utils.data.Dataset):
         self.root = root
         self.transforms = transforms
         self.class_names = class_names
-        self.imgs = list(sorted(os.listdir(root)))
+        self.imgs = []
+        self.labels = []
+
+        for class_idx, class_name in enumerate(class_names):
+            class_dir = os.path.join(root, class_name)
+            if os.path.isdir(class_dir):
+                for img_name in os.listdir(class_dir):
+                    if img_name.lower().endswith(('.png', '.jpg', '.jpeg')):
+                        self.imgs.append(os.path.join(class_name, img_name))
+                        self.labels.append(class_idx)
 
     def __getitem__(self, idx):
         img_path = os.path.join(self.root, self.imgs[idx])
         img = Image.open(img_path).convert("RGB")
+        label = self.labels[idx]
         
-        # For this example, we're creating dummy bounding boxes and labels
-        # In a real scenario, you would load this information from annotation files
-        num_objs = 3  # Assume 3 objects per image for this example
-        boxes = torch.as_tensor([[0, 0, 100, 100], [50, 50, 150, 150], [200, 200, 300, 300]], dtype=torch.float32)
-        labels = torch.randint(0, len(self.class_names), (num_objs,), dtype=torch.int64)
-        
-        target = {}
-        target["boxes"] = boxes
-        target["labels"] = labels
-        target["image_id"] = torch.tensor([idx])
-        target["area"] = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
-        target["iscrowd"] = torch.zeros((num_objs,), dtype=torch.int64)
-
         if self.transforms is not None:
-            img, target = self.transforms(img, target)
+            img = self.transforms(img)
 
-        return img, target
+        return img, label
 
     def __len__(self):
         return len(self.imgs)
