@@ -58,13 +58,13 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
         model = retinanet_resnet50_fpn(weights=RetinaNet_ResNet50_FPN_Weights.DEFAULT)
         
         # Modify the classification head for the new number of classes
-        in_features = model.head.classification_head.conv[0].in_channels
-        num_anchors = model.head.classification_head.num_anchors
+        in_features = model.backbone.out_channels
+        num_anchors = model.anchor_generator.num_anchors_per_location()[0]
         model.head.classification_head.num_classes = num_classes
-        model.head.classification_head.conv = torch.nn.Conv2d(in_features, num_anchors * num_classes, kernel_size=3, stride=1, padding=1)
+        model.head.classification_head.cls_logits = torch.nn.Conv2d(in_features, num_anchors * num_classes, kernel_size=3, stride=1, padding=1)
         
         # Modify the box regression head
-        model.head.regression_head.conv = torch.nn.Conv2d(in_features, num_anchors * 4, kernel_size=3, stride=1, padding=1)
+        model.head.regression_head.bbox_reg = torch.nn.Conv2d(in_features, num_anchors * 4, kernel_size=3, stride=1, padding=1)
     else:
         logging.error(f"Unsupported model: {model_name}")
         raise ValueError(f"Unsupported model: {model_name}")
