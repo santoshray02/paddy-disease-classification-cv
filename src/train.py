@@ -1,5 +1,6 @@
 import os
 import sys
+import logging
 
 def check_imports():
     required_packages = [
@@ -170,28 +171,32 @@ def train_object_detection(model, train_loader, val_loader, num_epochs, learning
 def train(data_dir, model_name, num_epochs=10, batch_size=32, learning_rate=0.001, output_dir='./output'):
     os.makedirs(output_dir, exist_ok=True)
     
+    # Set up logging
+    log_file = os.path.join(output_dir, f'{model_name}_training.log')
+    logging.basicConfig(filename=log_file, level=logging.INFO, format='%(asctime)s - %(message)s')
+    
     try:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        print(f"Using device: {device}")
+        logging.info(f"Using device: {device}")
     except RuntimeError as e:
         if 'CUDA' in str(e):
-            print(f"Error: {e}")
-            print("Please ensure your CUDA-enabled GPU is compatible with the current PyTorch installation.")
-            print("You can check the compatibility at https://pytorch.org/get-started/locally/")
+            logging.error(f"Error: {e}")
+            logging.error("Please ensure your CUDA-enabled GPU is compatible with the current PyTorch installation.")
+            logging.error("You can check the compatibility at https://pytorch.org/get-started/locally/")
             device = torch.device("cpu")
-            print("Falling back to CPU for training.")
+            logging.info("Falling back to CPU for training.")
         else:
             raise e
     
     if model_name in ['resnet50', 'inception_v3', 'fasterrcnn', 'retinanet', 'ssd']:
         train_loader, val_loader, test_loader, classes = load_data(data_dir, batch_size, model_name)
         num_classes = len(classes)
-        print(f"Number of classes from data loader: {num_classes}")
-        print(f"Classes: {classes}")
+        logging.info(f"Number of classes from data loader: {num_classes}")
+        logging.info(f"Classes: {classes}")
         model = get_model(model_name, num_classes=num_classes)
         
         if torch.cuda.device_count() > 1:
-            print(f"Using {torch.cuda.device_count()} GPUs!")
+            logging.info(f"Using {torch.cuda.device_count()} GPUs!")
             model = nn.DataParallel(model)
         
         model = model.to(device)
@@ -207,17 +212,22 @@ def train(data_dir, model_name, num_epochs=10, batch_size=32, learning_rate=0.00
         plot_training_history(history, output_dir)
     elif model_name == 'yolov5':
         from src.yolov5_model import train_yolov5
+        logging.info("Training YOLOv5 model")
         train_yolov5(data_dir, epochs=num_epochs, batch_size=batch_size)
     elif model_name == 'yolov6':
         from src.yolov6_model import train_yolov6
+        logging.info("Training YOLOv6 model")
         train_yolov6(data_dir, epochs=num_epochs, batch_size=batch_size)
     elif model_name == 'yolov7':
         from src.yolov7_model import train_yolov7
+        logging.info("Training YOLOv7 model")
         train_yolov7(data_dir, epochs=num_epochs, batch_size=batch_size)
     elif model_name == 'yolov8':
         from src.yolov8_model import train_yolov8
+        logging.info("Training YOLOv8 model")
         train_yolov8(data_dir, epochs=num_epochs, batch_size=batch_size)
     else:
+        logging.error(f"Unsupported model: {model_name}")
         raise ValueError(f"Unsupported model: {model_name}")
 
 if __name__ == "__main__":
