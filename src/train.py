@@ -190,7 +190,7 @@ def train(data_dir, model_name, num_epochs=10, batch_size=32, learning_rate=0.00
     
     if model_name in ['resnet50', 'inception_v3', 'fasterrcnn', 'retinanet', 'ssd']:
         train_loader, val_loader, test_loader, classes = load_data(data_dir, batch_size, model_name)
-        num_classes = len(classes)
+        num_classes = len(classes) if classes else None
         logging.info(f"Number of classes from data loader: {num_classes}")
         logging.info(f"Classes: {classes}")
         model = get_model(model_name, num_classes=num_classes)

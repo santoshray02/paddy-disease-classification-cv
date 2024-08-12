@@ -11,11 +11,12 @@ def load_data(data_dir, batch_size, model_type, train_ratio=0.8):
     """
     if model_type in ['resnet50', 'inception_v3', 'knn', 'svm']:
         train_loader, val_loader, test_loader, classes = load_classification_data(data_dir, batch_size, train_ratio)
-        return train_loader, val_loader, classes, test_loader
+        return train_loader, val_loader, test_loader, classes
     elif model_type in ['fasterrcnn', 'retinanet', 'ssd']:
-        return load_object_detection_data(data_dir, batch_size, train_ratio)
+        train_loader, val_loader, classes = load_object_detection_data(data_dir, batch_size, train_ratio)
+        return train_loader, val_loader, None, classes
     elif isinstance(model_type, str) and model_type.startswith('yolo'):
-        return load_yolo_data(data_dir, batch_size, train_ratio)
+        return load_yolo_data(data_dir, batch_size, train_ratio), None, None, None
     else:
         raise ValueError(f"Unsupported model type: {model_type}")
 
