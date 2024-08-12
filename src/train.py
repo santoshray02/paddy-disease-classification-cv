@@ -204,7 +204,10 @@ def train(data_dir, model_name, num_epochs=10, batch_size=32, learning_rate=0.00
         if model_name in ['resnet50', 'inception_v3']:
             history = train_classifier(model, train_loader, val_loader, num_epochs, learning_rate, device, output_dir)
         elif model_name in ['fasterrcnn', 'retinanet', 'ssd']:
-            history = train_object_detection(model, train_loader, val_loader, num_epochs, learning_rate, device, output_dir)
+            # Use a lower learning rate for object detection models
+            od_learning_rate = learning_rate * 0.1
+            logging.info(f"Adjusting learning rate for object detection: {od_learning_rate}")
+            history = train_object_detection(model, train_loader, val_loader, num_epochs, od_learning_rate, device, output_dir)
         
         # You can use test_loader for final evaluation if needed
         
