@@ -3,9 +3,10 @@ import logging
 import numpy as np
 import torch
 from sklearn.preprocessing import StandardScaler
-from data_loader import load_classification_data
+from data_loader import load_classification_data, load_object_detection_data
 from svm_model import train_svm_incremental
 from utils import plot_training_history
+from ultralytics import YOLO
 
 def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs=10, learning_rate=0.001):
     device = torch.device("cuda")
@@ -39,6 +40,23 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
         # Plot training history
         history = {'test_accuracy': [accuracy]}
         plot_training_history(history, output_dir)
+    elif model_name == 'yolov8':
+        # Load data
+        train_data, val_data = load_object_detection_data(data_dir, batch_size)
+        
+        # Initialize YOLOv8 model
+        model = YOLO('yolov8n.yaml')  # Create a new model from scratch
+        
+        # Train YOLOv8
+        logging.info("Training YOLOv8 model")
+        results = model.train(data=data_dir, epochs=num_epochs, imgsz=640, batch=batch_size, device=device)
+        
+        # Save the model
+        model.save(os.path.join(output_dir, 'yolov8_model.pt'))
+        logging.info(f"YOLOv8 model saved to {os.path.join(output_dir, 'yolov8_model.pt')}")
+        
+        # Plot training history
+        plot_training_history(results, output_dir)
     else:
         logging.error(f"Unsupported model: {model_name}")
         raise ValueError(f"Unsupported model: {model_name}")
@@ -48,7 +66,7 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='Train a model on the Paddy Doctor dataset.')
     parser.add_argument('--data_dir', type=str, default='data/paddy-disease-classification', help='Path to the dataset')
-    parser.add_argument('--model_name', type=str, default='svm', choices=['svm'], help='Model to train')
+    parser.add_argument('--model_name', type=str, default='svm', choices=['svm', 'yolov8'], help='Model to train')
     parser.add_argument('--batch_size', type=int, default=32, help='Batch size for training')
     parser.add_argument('--output_dir', type=str, default='./output', help='Directory to save output files')
     parser.add_argument('--num_epochs', type=int, default=10, help='Number of epochs for training')

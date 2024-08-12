@@ -52,8 +52,8 @@ def get_model(model_name, num_classes=None, pretrained=True):
         from src.yolov7_model import load_yolov7
         return load_yolov7()
     elif model_name == 'yolov8':
-        from src.yolov8_model import load_yolov8
-        return load_yolov8()
+        from ultralytics import YOLO
+        return YOLO('yolov8n.yaml')  # Create a new YOLOv8 model
     else:
         raise ValueError(f"Unsupported model: {model_name}")
 
