@@ -7,7 +7,8 @@ from models import get_model
 from utils import save_model, plot_training_history
 
 def train_classifier(model, train_loader, val_loader, num_epochs, learning_rate, device):
-    torch.cuda.empty_cache()  # Clear CUDA cache before training
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()  # Clear CUDA cache before training
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     
@@ -61,6 +62,8 @@ def train_classifier(model, train_loader, val_loader, num_epochs, learning_rate,
     return history
 
 def train_object_detection(model, train_loader, val_loader, num_epochs, learning_rate, device):
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()  # Clear CUDA cache before training
     params = [p for p in model.parameters() if p.requires_grad]
     optimizer = torch.optim.SGD(params, lr=learning_rate, momentum=0.9, weight_decay=0.0005)
     
@@ -110,7 +113,7 @@ def train_object_detection(model, train_loader, val_loader, num_epochs, learning
     return history
 
 def train(data_dir, model_name, num_epochs=10, batch_size=32, learning_rate=0.001):
-    device = torch.device("cpu")  # Always start with CPU
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
     
     if model_name in ['resnet50', 'inception_v3', 'fasterrcnn', 'retinanet', 'ssd']:
