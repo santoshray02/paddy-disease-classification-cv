@@ -203,7 +203,7 @@ if __name__ == "__main__":
     import argparse
     
     parser = argparse.ArgumentParser(description='Train a model on the Paddy Doctor dataset.')
-    parser.add_argument('--data_dir', type=str, default='data/paddy_doctor_dataset', help='Path to the dataset')
+    parser.add_argument('--data_dir', type=str, default='data/paddy-disease-classification', help='Path to the dataset')
     parser.add_argument('--model_name', type=str, default='resnet50', choices=['resnet50', 'inception_v3', 'fasterrcnn', 'retinanet', 'ssd'], help='Model to train')
     parser.add_argument('--num_epochs', type=int, default=10, help='Number of epochs to train')
     parser.add_argument('--batch_size', type=int, default=32, help='Batch size for training')
