@@ -19,12 +19,12 @@ def train_yolov8(data_dir, model_size='s', epochs=100, batch_size=16):
     import os
     
     data_yaml = 'temp_data.yaml'
-    train_dir = os.path.join(data_dir, 'train')
-    val_dir = os.path.join(data_dir, 'valid')
+    train_dir = os.path.join(data_dir, 'train_images')
+    val_dir = os.path.join(data_dir, 'val_images')
     
     # Ensure the directories exist
     if not os.path.exists(train_dir) or not os.path.exists(val_dir):
-        raise ValueError(f"Training or validation directory not found in {data_dir}")
+        raise ValueError(f"Training or validation directory not found in {data_dir}. Expected directories: 'train_images' and 'val_images'")
     
     data_dict = {
         'path': data_dir,
