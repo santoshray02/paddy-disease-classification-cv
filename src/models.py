@@ -7,6 +7,7 @@ from torchvision.models.detection.ssd import ssd300_vgg16
 class PaddyDiseaseClassifier(nn.Module):
     def __init__(self, num_classes, model_name='resnet50'):
         super(PaddyDiseaseClassifier, self).__init__()
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if model_name == 'resnet50':
             self.base_model = models.resnet50(pretrained=True)
             num_ftrs = self.base_model.fc.in_features
@@ -27,6 +28,7 @@ class PaddyDiseaseClassifier(nn.Module):
         self.num_classes = num_classes  # Store the number of classes
 
     def forward(self, x):
+        x = x.to(self.device)
         return self.base_model(x)
 
 def get_model(model_name, num_classes=None, pretrained=True):

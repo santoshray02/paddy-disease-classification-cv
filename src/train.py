@@ -1,6 +1,7 @@
 import os
 import logging
 import numpy as np
+import torch
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from data_loader import load_classification_data
@@ -8,6 +9,8 @@ from svm_model import train_svm
 from utils import plot_training_history
 
 def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs=10, learning_rate=0.001):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
     os.makedirs(output_dir, exist_ok=True)
     
     # Set up logging
