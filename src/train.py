@@ -1,7 +1,7 @@
 import os
 import logging
 from ultralytics import YOLO
-from data_loader import load_yolo_data, load_object_detection_data, collate_fn
+from data_loader import load_yolo_data, load_object_detection_data, load_classification_data, collate_fn
 import torchvision
 import torch
 from torchvision.models.detection import retinanet_resnet50_fpn
