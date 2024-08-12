@@ -1,47 +1,53 @@
-from sklearn.svm import LinearSVC
+from sklearn.svm import SGDClassifier
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.model_selection import RandomizedSearchCV
-from sklearn.metrics import accuracy_score, classification_report
-from scipy.stats import uniform, randint
+from sklearn.metrics import accuracy_score
 import numpy as np
 import logging
 
-def train_svm(X, y, num_epochs=10, learning_rate=0.001, kernel='rbf'):
-    # Define the parameter distribution
-    param_dist = {
-        'C': uniform(0.1, 100),
-        'max_iter': randint(num_epochs, num_epochs * 10),
-        'tol': uniform(learning_rate / 10, learning_rate * 10)
-    }
+def train_svm_incremental(train_data, val_data, scaler, num_epochs=10, learning_rate=0.001):
+    # Initialize the SGDClassifier (linear SVM)
+    svm = SGDClassifier(loss='hinge', alpha=learning_rate, max_iter=1, tol=None, 
+                        learning_rate='optimal', eta0=0.0, warm_start=True, random_state=42)
     
-    # Create a base model
-    svm = LinearSVC(dual=False)
+    best_accuracy = 0
+    best_model = None
     
-    # Perform randomized search with cross-validation
-    random_search = RandomizedSearchCV(svm, param_distributions=param_dist, 
-                                       n_iter=20, cv=3, n_jobs=-1, verbose=1, random_state=42)
-    random_search.fit(X, y)
+    for epoch in range(num_epochs):
+        logging.info(f"Epoch {epoch + 1}/{num_epochs}")
+        
+        # Training
+        for batch in train_data:
+            X_batch, y_batch = batch
+            X_batch = X_batch.numpy().reshape(X_batch.shape[0], -1)
+            X_batch = scaler.partial_fit(X_batch).transform(X_batch)
+            svm.partial_fit(X_batch, y_batch, classes=np.unique(y_batch))
+        
+        # Validation
+        y_true, y_pred = [], []
+        for batch in val_data:
+            X_batch, y_batch = batch
+            X_batch = X_batch.numpy().reshape(X_batch.shape[0], -1)
+            X_batch = scaler.transform(X_batch)
+            y_pred.extend(svm.predict(X_batch))
+            y_true.extend(y_batch)
+        
+        accuracy = accuracy_score(y_true, y_pred)
+        logging.info(f"Validation Accuracy: {accuracy:.4f}")
+        
+        if accuracy > best_accuracy:
+            best_accuracy = accuracy
+            best_model = svm
     
-    # Get the best model
-    best_model = random_search.best_estimator_
+    # Calibrate probabilities for the best model
+    calibrated_svc = CalibratedClassifierCV(best_model, cv='prefit')
     
-    # Calibrate probabilities
-    calibrated_svc = CalibratedClassifierCV(best_model, cv=3)
-    calibrated_svc.fit(X, y)
+    # Fit calibrated classifier on a subset of validation data
+    X_cal, y_cal = next(iter(val_data))
+    X_cal = X_cal.numpy().reshape(X_cal.shape[0], -1)
+    X_cal = scaler.transform(X_cal)
+    calibrated_svc.fit(X_cal, y_cal)
     
-    # Log the best parameters and score
-    logging.info(f"Best parameters: {random_search.best_params_}")
-    logging.info(f"Best cross-validation score: {random_search.best_score_:.4f}")
-    
-    # Evaluate the model on the entire dataset
-    y_pred = calibrated_svc.predict(X)
-    accuracy = accuracy_score(y, y_pred)
-    
-    logging.info(f"SVM Accuracy on entire dataset: {accuracy:.4f}")
-    logging.info("\nClassification Report:")
-    logging.info(classification_report(y, y_pred))
-    
-    return calibrated_svc
+    return calibrated_svc, best_accuracy
 
 def predict_svm(model, X):
     return model.predict(X)

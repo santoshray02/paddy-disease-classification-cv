@@ -2,10 +2,9 @@ import os
 import logging
 import numpy as np
 import torch
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from data_loader import load_classification_data
-from svm_model import train_svm
+from svm_model import train_svm_incremental
 from utils import plot_training_history
 
 def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs=10, learning_rate=0.001):
@@ -18,40 +17,16 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
     logging.basicConfig(filename=log_file, level=logging.INFO, format='%(asctime)s - %(message)s')
     
     if model_name == 'svm':
-        # Load and preprocess data
+        # Load data
         train_data, val_data, _, classes = load_classification_data(data_dir, batch_size)
         
-        # Initialize lists to store data
-        X_list, y_list = [], []
-        
-        # Process data in batches
-        for batch in train_data:
-            X_batch, y_batch = batch
-            X_list.append(X_batch.numpy().reshape(X_batch.shape[0], -1))
-            y_list.append(y_batch.numpy())
-        
-        for batch in val_data:
-            X_batch, y_batch = batch
-            X_list.append(X_batch.numpy().reshape(X_batch.shape[0], -1))
-            y_list.append(y_batch.numpy())
-        
-        # Combine all batches
-        X = np.concatenate(X_list)
-        y = np.concatenate(y_list)
-        
-        # Scale the features
+        # Initialize StandardScaler
         scaler = StandardScaler()
-        X = scaler.fit_transform(X)
         
-        # Split the data
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        # Train SVM incrementally
+        logging.info("Training SVM model incrementally")
+        svm_model, accuracy = train_svm_incremental(train_data, val_data, scaler, num_epochs=num_epochs, learning_rate=learning_rate)
         
-        # Train SVM
-        logging.info("Training SVM model")
-        svm_model = train_svm(X_train, y_train, num_epochs=num_epochs, learning_rate=learning_rate, kernel='rbf')
-        
-        # Evaluate the model
-        accuracy = svm_model.score(X_test, y_test)
         logging.info(f"SVM Test Accuracy: {accuracy:.4f}")
         
         # Save the model
@@ -59,7 +34,7 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
         joblib.dump(svm_model, os.path.join(output_dir, 'svm_model.joblib'))
         logging.info(f"SVM model saved to {os.path.join(output_dir, 'svm_model.joblib')}")
         
-        # Plot training history (not applicable for SVM, but you can create a simple accuracy plot)
+        # Plot training history
         history = {'test_accuracy': [accuracy]}
         plot_training_history(history, output_dir)
     else:
