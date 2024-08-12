@@ -5,14 +5,20 @@ from tqdm import tqdm
 from data_loader import load_data
 from models import get_model
 from utils import save_model, plot_training_history
+import torch.cuda.amp as amp
+from torch.utils.tensorboard import SummaryWriter
+import os
 
-def train_classifier(model, train_loader, val_loader, num_epochs, learning_rate, device):
+def train_classifier(model, train_loader, val_loader, num_epochs, learning_rate, device, output_dir):
     if torch.cuda.is_available():
         torch.cuda.empty_cache()  # Clear CUDA cache before training
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    scaler = amp.GradScaler()
+    writer = SummaryWriter(log_dir=os.path.join(output_dir, 'logs'))
     
     history = {'train_loss': [], 'val_loss': [], 'train_acc': [], 'val_acc': []}
+    best_val_loss = float('inf')
     
     for epoch in range(num_epochs):
         model.train()
@@ -22,10 +28,13 @@ def train_classifier(model, train_loader, val_loader, num_epochs, learning_rate,
             inputs, labels = inputs.to(device), labels.to(device)
             
             optimizer.zero_grad()
-            outputs = model(inputs)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
+            with amp.autocast():
+                outputs = model(inputs)
+                loss = criterion(outputs, labels)
+            
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
             
             train_loss += loss.item()
             _, predicted = outputs.max(1)
@@ -40,8 +49,9 @@ def train_classifier(model, train_loader, val_loader, num_epochs, learning_rate,
         with torch.no_grad():
             for inputs, labels in val_loader:
                 inputs, labels = inputs.to(device), labels.to(device)
-                outputs = model(inputs)
-                loss = criterion(outputs, labels)
+                with amp.autocast():
+                    outputs = model(inputs)
+                    loss = criterion(outputs, labels)
                 
                 val_loss += loss.item()
                 _, predicted = outputs.max(1)
@@ -54,20 +64,33 @@ def train_classifier(model, train_loader, val_loader, num_epochs, learning_rate,
         print(f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}")
         print(f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}")
         
+        writer.add_scalar('Loss/train', train_loss, epoch)
+        writer.add_scalar('Loss/val', val_loss, epoch)
+        writer.add_scalar('Accuracy/train', train_acc, epoch)
+        writer.add_scalar('Accuracy/val', val_acc, epoch)
+        
         history['train_loss'].append(train_loss)
         history['val_loss'].append(val_loss)
         history['train_acc'].append(train_acc)
         history['val_acc'].append(val_acc)
+        
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            save_model(model, os.path.join(output_dir, f'best_{model.__class__.__name__}_model.pth'))
     
+    writer.close()
     return history
 
-def train_object_detection(model, train_loader, val_loader, num_epochs, learning_rate, device):
+def train_object_detection(model, train_loader, val_loader, num_epochs, learning_rate, device, output_dir):
     if torch.cuda.is_available():
         torch.cuda.empty_cache()  # Clear CUDA cache before training
     params = [p for p in model.parameters() if p.requires_grad]
     optimizer = torch.optim.SGD(params, lr=learning_rate, momentum=0.9, weight_decay=0.0005)
+    scaler = amp.GradScaler()
+    writer = SummaryWriter(log_dir=os.path.join(output_dir, 'logs'))
     
     history = {'train_loss': [], 'val_loss': []}
+    best_val_loss = float('inf')
     
     for epoch in range(num_epochs):
         model.train()
@@ -77,12 +100,14 @@ def train_object_detection(model, train_loader, val_loader, num_epochs, learning
             images = list(image.to(device) for image in images)
             targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
             
-            loss_dict = model(images, targets)
-            losses = sum(loss for loss in loss_dict.values())
-            
             optimizer.zero_grad()
-            losses.backward()
-            optimizer.step()
+            with amp.autocast():
+                loss_dict = model(images, targets)
+                losses = sum(loss for loss in loss_dict.values())
+            
+            scaler.scale(losses).backward()
+            scaler.step(optimizer)
+            scaler.update()
             
             train_loss += losses.item()
         
@@ -96,8 +121,9 @@ def train_object_detection(model, train_loader, val_loader, num_epochs, learning
                 images = list(image.to(device) for image in images)
                 targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
                 
-                loss_dict = model(images, targets)
-                losses = sum(loss for loss in loss_dict.values())
+                with amp.autocast():
+                    loss_dict = model(images, targets)
+                    losses = sum(loss for loss in loss_dict.values())
                 
                 val_loss += losses.item()
         
@@ -107,31 +133,57 @@ def train_object_detection(model, train_loader, val_loader, num_epochs, learning
         print(f"Train Loss: {train_loss:.4f}")
         print(f"Val Loss: {val_loss:.4f}")
         
+        writer.add_scalar('Loss/train', train_loss, epoch)
+        writer.add_scalar('Loss/val', val_loss, epoch)
+        
         history['train_loss'].append(train_loss)
         history['val_loss'].append(val_loss)
+        
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            save_model(model, os.path.join(output_dir, f'best_{model.__class__.__name__}_model.pth'))
     
+    writer.close()
     return history
 
-def train(data_dir, model_name, num_epochs=10, batch_size=32, learning_rate=0.001):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
+def train(data_dir, model_name, num_epochs=10, batch_size=32, learning_rate=0.001, output_dir='./output'):
+    os.makedirs(output_dir, exist_ok=True)
+    
+    try:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print(f"Using device: {device}")
+    except RuntimeError as e:
+        if 'CUDA' in str(e):
+            print(f"Error: {e}")
+            print("Please ensure your CUDA-enabled GPU is compatible with the current PyTorch installation.")
+            print("You can check the compatibility at https://pytorch.org/get-started/locally/")
+            device = torch.device("cpu")
+            print("Falling back to CPU for training.")
+        else:
+            raise e
     
     if model_name in ['resnet50', 'inception_v3', 'fasterrcnn', 'retinanet', 'ssd']:
         train_loader, val_loader, test_loader, classes = load_data(data_dir, batch_size, model_name)
         num_classes = len(classes)
         print(f"Number of classes from data loader: {num_classes}")
         print(f"Classes: {classes}")
-        model = get_model(model_name, num_classes=num_classes).to(device)
+        model = get_model(model_name, num_classes=num_classes)
+        
+        if torch.cuda.device_count() > 1:
+            print(f"Using {torch.cuda.device_count()} GPUs!")
+            model = nn.DataParallel(model)
+        
+        model = model.to(device)
         
         if model_name in ['resnet50', 'inception_v3']:
-            history = train_classifier(model, train_loader, val_loader, num_epochs, learning_rate, device)
+            history = train_classifier(model, train_loader, val_loader, num_epochs, learning_rate, device, output_dir)
         elif model_name in ['fasterrcnn', 'retinanet', 'ssd']:
-            history = train_object_detection(model, train_loader, val_loader, num_epochs, learning_rate, device)
+            history = train_object_detection(model, train_loader, val_loader, num_epochs, learning_rate, device, output_dir)
         
         # You can use test_loader for final evaluation if needed
         
-        save_model(model, f'{model_name}_model.pth')
-        plot_training_history(history)
+        save_model(model, os.path.join(output_dir, f'{model_name}_final_model.pth'))
+        plot_training_history(history, output_dir)
     elif model_name == 'yolov5':
         from src.yolov5_model import train_yolov5
         train_yolov5(data_dir, epochs=num_epochs, batch_size=batch_size)
@@ -156,7 +208,8 @@ if __name__ == "__main__":
     parser.add_argument('--num_epochs', type=int, default=10, help='Number of epochs to train')
     parser.add_argument('--batch_size', type=int, default=32, help='Batch size for training')
     parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate for training')
+    parser.add_argument('--output_dir', type=str, default='./output', help='Directory to save output files')
     
     args = parser.parse_args()
     
-    train(args.data_dir, args.model_name, args.num_epochs, args.batch_size, args.learning_rate)
+    train(args.data_dir, args.model_name, args.num_epochs, args.batch_size, args.learning_rate, args.output_dir)
