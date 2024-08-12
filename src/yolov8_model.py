@@ -11,9 +11,30 @@ def load_yolov8(model_size='s'):
     model = YOLO(f'yolov8{model_size}.pt')
     return model
 
-def train_yolov8(data_yaml, model_size='s', epochs=100, batch_size=16):
+def train_yolov8(data_dir, model_size='s', epochs=100, batch_size=16):
     model = load_yolov8(model_size)
+    
+    # Create a temporary YAML file
+    import yaml
+    data_yaml = 'temp_data.yaml'
+    data_dict = {
+        'path': data_dir,
+        'train': 'train',
+        'val': 'val',
+        'nc': 10,  # number of classes, adjust if needed
+        'names': ['bacterial_leaf_blight', 'bacterial_leaf_streak', 'bacterial_panicle_blight', 
+                  'blast', 'brown_spot', 'dead_heart', 'downy_mildew', 'hispa', 'normal', 'tungro']
+    }
+    
+    with open(data_yaml, 'w') as f:
+        yaml.dump(data_dict, f)
+    
+    # Train the model
     model.train(data=data_yaml, epochs=epochs, batch=batch_size)
+    
+    # Remove the temporary YAML file
+    import os
+    os.remove(data_yaml)
 
 def predict_yolov8(model, image):
     results = model(image)
