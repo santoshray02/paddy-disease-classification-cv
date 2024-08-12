@@ -217,7 +217,7 @@ def train(data_dir, model_name, num_epochs=10, batch_size=32, learning_rate=0.00
         yolo_module = __import__(f'{model_name}_model', fromlist=[f'train_{model_name}'])
         train_func = getattr(yolo_module, f'train_{model_name}')
         logging.info(f"Training {model_name.upper()} model")
-        train_func(os.path.dirname(data_dir), epochs=num_epochs, batch_size=batch_size)
+        train_func(data_dir, epochs=num_epochs, batch_size=batch_size)
     else:
         logging.error(f"Unsupported model: {model_name}")
         raise ValueError(f"Unsupported model: {model_name}")

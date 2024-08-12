@@ -19,8 +19,8 @@ def train_yolov8(data_dir, model_size='s', epochs=100, batch_size=16):
     import os
     
     data_yaml = 'temp_data.yaml'
-    train_dir = os.path.join(data_dir, 'train_images')
-    val_dir = os.path.join(data_dir, 'val_images')
+    train_dir = os.path.join(data_dir, 'train')
+    val_dir = os.path.join(data_dir, 'valid')
     
     # Ensure the directories exist
     if not os.path.exists(train_dir) or not os.path.exists(val_dir):
