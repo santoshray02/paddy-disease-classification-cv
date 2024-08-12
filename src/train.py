@@ -16,7 +16,14 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
     
     # Load data
     try:
-        data_yaml = load_yolo_data(data_dir)
+        if model_name.startswith('yolo'):
+            data_yaml = load_yolo_data(data_dir)
+        elif model_name in ['resnet50', 'inception_v3']:
+            train_loader, val_loader, test_loader, classes = load_classification_data(data_dir, batch_size)
+            num_classes = len(classes)
+        else:
+            train_loader, val_loader, classes = load_object_detection_data(data_dir, batch_size)
+            num_classes = len(classes)
     except FileNotFoundError as e:
         logging.error(f"Error: The specified data directory does not exist: {data_dir}")
         raise
@@ -26,6 +33,9 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
     except Exception as e:
         logging.error(f"Unexpected error loading data: {str(e)}")
         raise
+
+    if num_classes is None:
+        raise ValueError("Number of classes must be specified or determined from the dataset")
     
     # Initialize model
     if model_name.startswith('yolov8'):

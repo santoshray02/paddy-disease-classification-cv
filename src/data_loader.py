@@ -75,29 +75,28 @@ def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
     """
     Load and preprocess data for object detection models.
     """
-    # Assuming COCO-format annotations
-    train_dir = os.path.join(data_dir, 'train')
-    val_dir = os.path.join(data_dir, 'val')
-    train_ann_file = os.path.join(train_dir, 'annotations.json')
-    val_ann_file = os.path.join(val_dir, 'annotations.json')
+    if not os.path.exists(data_dir):
+        raise FileNotFoundError(f"Could not find data directory: {data_dir}")
 
-    if not os.path.exists(train_dir) or not os.path.exists(val_dir):
-        raise FileNotFoundError(f"Could not find train or val directory in {data_dir}")
+    print(f"Using data directory: {data_dir}")
 
-    print(f"Using train directory: {train_dir}")
-    print(f"Using val directory: {val_dir}")
-
-    # Load COCO dataset
-    train_dataset = CocoDetection(root=train_dir, annFile=train_ann_file, transform=get_transform(train=True))
-    val_dataset = CocoDetection(root=val_dir, annFile=val_ann_file, transform=get_transform(train=False))
+    # Load the entire dataset
+    full_dataset = datasets.ImageFolder(data_dir, transform=get_transform(train=True))
+    
+    # Split the dataset into train and validation sets
+    train_size = int(train_ratio * len(full_dataset))
+    val_size = len(full_dataset) - train_size
+    train_dataset, val_dataset = torch.utils.data.random_split(full_dataset, [train_size, val_size])
+    
+    # Apply different transforms to validation set
+    val_dataset.dataset.transform = get_transform(train=False)
 
     # Create data loaders
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
 
     # Get class names
-    coco = COCO(train_ann_file)
-    classes = [cat['name'] for cat in coco.loadCats(coco.getCatIds())]
+    classes = full_dataset.classes
 
     return train_loader, val_loader, classes
 
