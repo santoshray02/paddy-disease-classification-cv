@@ -4,6 +4,7 @@ from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, random_split
 from torchvision.datasets import CocoDetection
 from pycocotools.coco import COCO
+import torchvision.transforms as T
 
 def load_data(data_dir, batch_size, model_type, train_ratio=0.8):
     """
