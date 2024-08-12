@@ -103,16 +103,25 @@ def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
 
     return train_loader, val_loader, classes
 
-def load_yolo_data(data_dir, batch_size=32, train_ratio=0.8, yolo_version='v5'):
+def load_yolo_data(data_dir):
     """
     Prepare data for YOLO models.
     """
-    # YOLO models use a different data format, typically a YAML file
-    # Here we'll just return the data directory path and let the YOLO training script handle the data
-    if yolo_version in ['v5', 'v6', 'v7', 'v8']:
-        return data_dir
-    else:
-        raise ValueError(f"Unsupported YOLO version: {yolo_version}")
+    # Create a YAML file for YOLO training
+    yaml_content = f"""
+train: {os.path.join(data_dir, 'train')}
+val: {os.path.join(data_dir, 'valid')}
+test: {os.path.join(data_dir, 'test')}
+
+nc: {len(os.listdir(os.path.join(data_dir, 'train')))}  # number of classes
+names: {os.listdir(os.path.join(data_dir, 'train'))}  # class names
+    """
+    
+    yaml_path = os.path.join(data_dir, 'data.yaml')
+    with open(yaml_path, 'w') as f:
+        f.write(yaml_content)
+    
+    return yaml_path
 
 def collate_fn(batch):
     """
