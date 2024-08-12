@@ -1,3 +1,25 @@
+import os
+import sys
+
+def check_imports():
+    required_packages = [
+        'torch', 'tqdm', 'tensorboard'
+    ]
+    missing_packages = []
+    
+    for package in required_packages:
+        try:
+            __import__(package)
+        except ImportError:
+            missing_packages.append(package)
+    
+    if missing_packages:
+        print(f"Error: The following required packages are missing: {', '.join(missing_packages)}")
+        print("Please install them using: pip install -r requirements.txt")
+        sys.exit(1)
+
+check_imports()
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -7,7 +29,6 @@ from models import get_model
 from utils import save_model, plot_training_history
 import torch.cuda.amp as amp
 from torch.utils.tensorboard import SummaryWriter
-import os
 
 def train_classifier(model, train_loader, val_loader, num_epochs, learning_rate, device, output_dir):
     if torch.cuda.is_available():
