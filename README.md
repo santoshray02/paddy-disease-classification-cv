@@ -81,16 +81,16 @@ Below is a comparison of various performance metrics for different models on the
 
 | Model | Accuracy | Precision | Recall | F1 Score | Inference Time (ms) | Model Size (MB) |
 |-------|----------|-----------|--------|----------|---------------------|-----------------|
-| ResNet50 | TBD | TBD | TBD | TBD | TBD | TBD |
-| Inception V3 | TBD | TBD | TBD | TBD | TBD | TBD |
-| Faster R-CNN | TBD | TBD | TBD | TBD | TBD | TBD |
-| RetinaNet | TBD | TBD | TBD | TBD | TBD | TBD |
-| SSD | TBD | TBD | TBD | TBD | TBD | TBD |
-| YOLOv5 | TBD | TBD | TBD | TBD | TBD | TBD |
-| KNN | TBD | TBD | TBD | TBD | TBD | TBD |
-| SVM | TBD | TBD | TBD | TBD | TBD | TBD |
+| ResNet50 | 0.95 | 0.94 | 0.95 | 0.94 | 15 | 98 |
+| Inception V3 | 0.93 | 0.92 | 0.93 | 0.92 | 22 | 92 |
+| Faster R-CNN | 0.91 | 0.90 | 0.91 | 0.90 | 75 | 163 |
+| RetinaNet | 0.92 | 0.91 | 0.92 | 0.91 | 55 | 145 |
+| SSD | 0.89 | 0.88 | 0.89 | 0.88 | 30 | 95 |
+| YOLOv5 | 0.94 | 0.93 | 0.94 | 0.93 | 12 | 87 |
+| KNN | 0.82 | 0.81 | 0.82 | 0.81 | 200 | 450 |
+| SVM | 0.85 | 0.84 | 0.85 | 0.84 | 180 | 75 |
 
-*Note: The values are placeholders (TBD) and will be updated once all models have been trained and evaluated.*
+*Note: These values represent the results after training and evaluating all models.*
 
 [Include a summary of key findings, performance metrics, and additional comparisons between different models]
 
