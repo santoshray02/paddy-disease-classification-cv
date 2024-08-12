@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader, random_split
 from torchvision.datasets import CocoDetection
 from pycocotools.coco import COCO
 
-def load_data(data_dir, model_type, batch_size=32, train_ratio=0.8):
+def load_data(data_dir, batch_size, model_type, train_ratio=0.8):
     """
     Load and preprocess the dataset based on the model type.
     """
@@ -12,7 +12,7 @@ def load_data(data_dir, model_type, batch_size=32, train_ratio=0.8):
         return load_classification_data(data_dir, batch_size, train_ratio)
     elif model_type in ['fasterrcnn', 'retinanet', 'ssd']:
         return load_object_detection_data(data_dir, batch_size, train_ratio)
-    elif model_type.startswith('yolo'):
+    elif isinstance(model_type, str) and model_type.startswith('yolo'):
         return load_yolo_data(data_dir, batch_size, train_ratio)
     else:
         raise ValueError(f"Unsupported model type: {model_type}")
