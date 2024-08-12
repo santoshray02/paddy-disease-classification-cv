@@ -4,7 +4,8 @@ from ultralytics import YOLO
 from data_loader import load_yolo_data, load_object_detection_data, load_classification_data, collate_fn
 import torchvision
 import torch
-from torchvision.models.detection import retinanet_resnet50_fpn
+from torchvision.models.detection import retinanet_resnet50_fpn, RetinaNet
+from torchvision.models.detection.anchor_utils import AnchorGenerator
 from torchvision.models.detection.retinanet import RetinaNet_ResNet50_FPN_Weights
 
 def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs=100, learning_rate=0.01, num_classes=None):
@@ -52,7 +53,18 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
     elif model_name == 'retinanet':
         train_loader, val_loader, classes = load_object_detection_data(data_dir, batch_size)
         num_classes = len(classes)
-        model = retinanet_resnet50_fpn(num_classes=num_classes, weights=RetinaNet_ResNet50_FPN_Weights.DEFAULT)
+        
+        # Load a pre-trained model
+        model = retinanet_resnet50_fpn(weights=RetinaNet_ResNet50_FPN_Weights.DEFAULT)
+        
+        # Modify the classification head for the new number of classes
+        in_features = model.head.classification_head.conv[0].in_channels
+        num_anchors = model.head.classification_head.num_anchors
+        model.head.classification_head.num_classes = num_classes
+        model.head.classification_head.conv = torch.nn.Conv2d(in_features, num_anchors * num_classes, kernel_size=3, stride=1, padding=1)
+        
+        # Modify the box regression head
+        model.head.regression_head.conv = torch.nn.Conv2d(in_features, num_anchors * 4, kernel_size=3, stride=1, padding=1)
     else:
         logging.error(f"Unsupported model: {model_name}")
         raise ValueError(f"Unsupported model: {model_name}")
