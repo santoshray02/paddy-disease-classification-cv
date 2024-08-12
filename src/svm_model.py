@@ -3,6 +3,7 @@ from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import accuracy_score
 import numpy as np
 import logging
+from sklearn.preprocessing import StandardScaler
 
 def train_svm_incremental(train_data, val_data, scaler, num_epochs=10, learning_rate=0.001):
     # Initialize the SGDClassifier (linear SVM)
