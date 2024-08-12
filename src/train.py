@@ -34,7 +34,7 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
         
         # Train SVM
         logging.info("Training SVM model")
-        svm_model = train_svm(X_train, y_train, num_epochs=num_epochs, learning_rate=learning_rate)
+        svm_model = train_svm(X_train, y_train, num_epochs=num_epochs, learning_rate=learning_rate, kernel='rbf')
         
         # Evaluate the model
         accuracy = svm_model.score(X_test, y_test)

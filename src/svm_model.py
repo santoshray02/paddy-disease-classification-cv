@@ -4,12 +4,14 @@ from sklearn.metrics import accuracy_score, classification_report
 import numpy as np
 import logging
 
-def train_svm(X, y, kernel='rbf'):
+def train_svm(X, y, num_epochs=10, learning_rate=0.001, kernel='rbf'):
     # Define the parameter grid
     param_grid = {
         'C': [0.1, 1, 10, 100],
         'gamma': ['scale', 'auto', 0.1, 1],
-        'kernel': ['rbf', 'poly', 'sigmoid']
+        'kernel': ['rbf', 'poly', 'sigmoid'],
+        'max_iter': [num_epochs],  # Use num_epochs as max_iter
+        'tol': [learning_rate]  # Use learning_rate as tolerance
     }
     
     # Create a base model
