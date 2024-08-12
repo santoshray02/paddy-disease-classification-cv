@@ -13,6 +13,9 @@ def train_svm_incremental(train_data, val_data, scaler, num_epochs=10, learning_
     best_accuracy = 0
     best_model = None
     
+    # Get all unique classes from the entire dataset
+    all_classes = np.unique(np.concatenate([y for _, y in train_data]))
+    
     for epoch in range(num_epochs):
         logging.info(f"Epoch {epoch + 1}/{num_epochs}")
         
@@ -21,7 +24,7 @@ def train_svm_incremental(train_data, val_data, scaler, num_epochs=10, learning_
             X_batch, y_batch = batch
             X_batch = X_batch.numpy().reshape(X_batch.shape[0], -1)
             X_batch = scaler.partial_fit(X_batch).transform(X_batch)
-            svm.partial_fit(X_batch, y_batch, classes=np.unique(y_batch))
+            svm.partial_fit(X_batch, y_batch, classes=all_classes)
         
         # Validation
         y_true, y_pred = [], []
