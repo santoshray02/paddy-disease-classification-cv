@@ -35,7 +35,8 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
         raise
 
     if num_classes is None:
-        raise ValueError("Number of classes must be specified or determined from the dataset")
+        num_classes = len(classes)
+        logging.info(f"Number of classes determined from the dataset: {num_classes}")
     
     # Initialize model
     if model_name.startswith('yolov8'):

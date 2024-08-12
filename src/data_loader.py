@@ -81,17 +81,26 @@ def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
 
     print(f"Using data directory: {data_dir}")
 
-    # Assume the data is organized in a structure similar to COCO dataset
+    # Assume the data is organized in a structure with a single 'train' directory
     train_dir = os.path.join(data_dir, 'train')
-    val_dir = os.path.join(data_dir, 'valid')
+    if not os.path.exists(train_dir):
+        train_dir = data_dir  # Use the main directory if 'train' doesn't exist
     
     # Get class names from subdirectories
     class_names = [d for d in os.listdir(train_dir) if os.path.isdir(os.path.join(train_dir, d))]
     num_classes = len(class_names)
     
-    # Create custom datasets
-    train_dataset = CustomDataset(train_dir, class_names, get_transform(train=True))
-    val_dataset = CustomDataset(val_dir, class_names, get_transform(train=False))
+    # Create custom dataset
+    full_dataset = CustomDataset(train_dir, class_names, get_transform(train=True))
+    
+    # Split the dataset into train and validation sets
+    dataset_size = len(full_dataset)
+    train_size = int(train_ratio * dataset_size)
+    val_size = dataset_size - train_size
+    train_dataset, val_dataset = torch.utils.data.random_split(full_dataset, [train_size, val_size])
+    
+    # Apply different transforms to validation set
+    val_dataset.dataset = CustomDataset(train_dir, class_names, get_transform(train=False))
 
     # Create data loaders
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
