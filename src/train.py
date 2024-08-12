@@ -126,10 +126,10 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
                 losses.backward()
                 optimizer.step()
         
-            lr_scheduler.step()
-            
             avg_loss = total_loss / len(train_loader)
             logging.info(f"Epoch {epoch+1}/{num_epochs}, Average Loss: {avg_loss:.4f}")
+            
+            lr_scheduler.step()
             
             # Evaluate on validation set
             model.eval()
