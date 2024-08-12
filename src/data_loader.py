@@ -107,6 +107,9 @@ def load_yolo_data(data_dir):
     """
     Prepare data for YOLO models.
     """
+    if not os.path.exists(data_dir):
+        raise FileNotFoundError(f"The specified data directory does not exist: {data_dir}")
+
     # Check if the expected subdirectories exist
     train_dir = os.path.join(data_dir, 'train')
     val_dir = os.path.join(data_dir, 'valid')
@@ -117,6 +120,9 @@ def load_yolo_data(data_dir):
 
     # Get the class names (assuming they are the subdirectories in the train directory)
     class_names = [d for d in os.listdir(train_dir) if os.path.isdir(os.path.join(train_dir, d))]
+
+    if not class_names:
+        raise ValueError(f"No class directories found in {train_dir}")
 
     # Create a YAML file for YOLO training
     yaml_content = f"""

@@ -13,8 +13,14 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
     # Load data
     try:
         data_yaml = load_yolo_data(data_dir)
+    except FileNotFoundError as e:
+        logging.error(f"Error: The specified data directory does not exist: {data_dir}")
+        raise
+    except ValueError as e:
+        logging.error(f"Error: {str(e)}")
+        raise
     except Exception as e:
-        logging.error(f"Error loading data: {str(e)}")
+        logging.error(f"Unexpected error loading data: {str(e)}")
         raise
     
     # Initialize model
