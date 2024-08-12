@@ -7,6 +7,7 @@ from models import get_model
 from utils import save_model, plot_training_history
 
 def train_classifier(model, train_loader, val_loader, num_epochs, learning_rate, device):
+    torch.cuda.empty_cache()  # Clear CUDA cache before training
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     
@@ -110,15 +111,30 @@ def train_object_detection(model, train_loader, val_loader, num_epochs, learning
 
 def train(data_dir, model_name, num_epochs=10, batch_size=32, learning_rate=0.001):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
     
     if model_name in ['resnet50', 'inception_v3', 'fasterrcnn', 'retinanet', 'ssd']:
         train_loader, val_loader, test_loader, classes = load_data(data_dir, batch_size, model_name)
         model = get_model(model_name, num_classes=len(classes)).to(device)
         
         if model_name in ['resnet50', 'inception_v3']:
-            history = train_classifier(model, train_loader, val_loader, num_epochs, learning_rate, device)
+            try:
+                history = train_classifier(model, train_loader, val_loader, num_epochs, learning_rate, device)
+            except RuntimeError as e:
+                print(f"CUDA error occurred: {e}")
+                print("Attempting to continue with CPU...")
+                device = torch.device("cpu")
+                model = model.to(device)
+                history = train_classifier(model, train_loader, val_loader, num_epochs, learning_rate, device)
         elif model_name in ['fasterrcnn', 'retinanet', 'ssd']:
-            history = train_object_detection(model, train_loader, val_loader, num_epochs, learning_rate, device)
+            try:
+                history = train_object_detection(model, train_loader, val_loader, num_epochs, learning_rate, device)
+            except RuntimeError as e:
+                print(f"CUDA error occurred: {e}")
+                print("Attempting to continue with CPU...")
+                device = torch.device("cpu")
+                model = model.to(device)
+                history = train_object_detection(model, train_loader, val_loader, num_epochs, learning_rate, device)
         
         # You can use test_loader for final evaluation if needed
         
