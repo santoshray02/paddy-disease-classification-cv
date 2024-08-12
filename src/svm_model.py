@@ -56,6 +56,8 @@ if __name__ == "__main__":
     import argparse
     from sklearn.datasets import load_iris
     from sklearn.model_selection import train_test_split
+    from torch.utils.data import TensorDataset, DataLoader
+    import torch
     
     parser = argparse.ArgumentParser(description='Train and test SVM model.')
     args = parser.parse_args()
@@ -67,15 +69,21 @@ if __name__ == "__main__":
     # Split the data
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
-    # Train the model
-    svm_model = train_svm(X_train, y_train)
+    # Create DataLoaders
+    train_dataset = TensorDataset(torch.FloatTensor(X_train), torch.LongTensor(y_train))
+    val_dataset = TensorDataset(torch.FloatTensor(X_test), torch.LongTensor(y_test))
+    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
     
-    # Evaluate on test set
-    y_pred = predict_svm(svm_model, X_test)
-    test_accuracy = accuracy_score(y_test, y_pred)
-    print(f"Test Accuracy: {test_accuracy:.4f}")
+    # Initialize StandardScaler
+    scaler = StandardScaler()
+    
+    # Train the model
+    svm_model, accuracy = train_svm_incremental(train_loader, val_loader, scaler)
+    
+    print(f"Test Accuracy: {accuracy:.4f}")
     
     # Make a prediction
     sample = X_test[0].reshape(1, -1)  # Use the first test sample as an example
-    prediction = predict_svm(svm_model, sample)
+    prediction = predict_svm(svm_model, scaler.transform(sample))
     print(f"Predicted class: {prediction[0]}")
