@@ -119,7 +119,12 @@ def load_yolo_data(data_dir):
         train_dir = data_dir  # Use the main directory if 'train' doesn't exist
 
     # Get the class names (assuming they are the subdirectories in the train directory)
-    class_names = [d for d in os.listdir(train_dir) if os.path.isdir(os.path.join(train_dir, d))]
+    class_names = []
+    for root, dirs, files in os.walk(train_dir):
+        for dir in dirs:
+            if os.path.isdir(os.path.join(root, dir)) and any(file.endswith(('.jpg', '.jpeg', '.png')) for file in os.listdir(os.path.join(root, dir))):
+                class_names.append(dir)
+        break  # Only process the first level of subdirectories
 
     if not class_names:
         raise ValueError(f"No class directories found in {train_dir}")
