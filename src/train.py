@@ -42,9 +42,9 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
             logging.error("Number of classes must be specified for RetinaNet")
             raise ValueError("Number of classes must be specified for RetinaNet")
         model = retinanet_resnet50_fpn(weights=RetinaNet_ResNet50_FPN_Weights.DEFAULT)
-        in_features = model.head.classification_head.conv[0].in_channels
+        in_features = model.head.classification_head.conv[0].out_channels
         model.head.classification_head.num_classes = num_classes
-        model.head.classification_head.conv = torch.nn.Conv2d(in_features, num_classes, kernel_size=3, stride=1, padding=1)
+        model.head.classification_head.conv = torch.nn.Conv2d(in_features, num_classes * model.head.classification_head.num_anchors, kernel_size=3, stride=1, padding=1)
     else:
         logging.error(f"Unsupported model: {model_name}")
         raise ValueError(f"Unsupported model: {model_name}")
@@ -80,7 +80,7 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
             hyp={'lr0': learning_rate}
         )
     elif model_name == 'retinanet':
-        train_loader, val_loader = load_object_detection_data(data_dir, batch_size)
+        train_loader, val_loader, _ = load_object_detection_data(data_dir, batch_size)
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model.to(device)
         params = [p for p in model.parameters() if p.requires_grad]
