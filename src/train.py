@@ -8,8 +8,10 @@ from svm_model import train_svm_incremental
 from utils import plot_training_history
 
 def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs=10, learning_rate=0.001):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda")
     print(f"Using device: {device}")
+    if not torch.cuda.is_available():
+        raise RuntimeError("CUDA is not available. Please check your GPU setup.")
     os.makedirs(output_dir, exist_ok=True)
     
     # Set up logging

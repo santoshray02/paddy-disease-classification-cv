@@ -32,8 +32,10 @@ def predict_object_detection(image_path, model, device):
     return prediction[0]
 
 def predict(image_path, model_path, model_name, class_names=None):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda")
     print(f"Using device: {device}")
+    if not torch.cuda.is_available():
+        raise RuntimeError("CUDA is not available. Please check your GPU setup.")
     
     if model_name in ['resnet50', 'inception_v3']:
         model = get_model(model_name, num_classes=len(class_names))

@@ -7,7 +7,9 @@ from torchvision.models.detection.ssd import ssd300_vgg16
 class PaddyDiseaseClassifier(nn.Module):
     def __init__(self, num_classes, model_name='resnet50'):
         super(PaddyDiseaseClassifier, self).__init__()
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda")
+        if not torch.cuda.is_available():
+            raise RuntimeError("CUDA is not available. Please check your GPU setup.")
         if model_name == 'resnet50':
             self.base_model = models.resnet50(pretrained=True)
             num_ftrs = self.base_model.fc.in_features
