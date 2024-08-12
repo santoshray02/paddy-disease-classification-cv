@@ -213,22 +213,11 @@ def train(data_dir, model_name, num_epochs=10, batch_size=32, learning_rate=0.00
         
         save_model(model, os.path.join(output_dir, f'{model_name}_final_model.pth'))
         plot_training_history(history, output_dir)
-    elif model_name == 'yolov5':
-        from src.yolov5_model import train_yolov5
-        logging.info("Training YOLOv5 model")
-        train_yolov5(data_dir, epochs=num_epochs, batch_size=batch_size)
-    elif model_name == 'yolov6':
-        from src.yolov6_model import train_yolov6
-        logging.info("Training YOLOv6 model")
-        train_yolov6(data_dir, epochs=num_epochs, batch_size=batch_size)
-    elif model_name == 'yolov7':
-        from src.yolov7_model import train_yolov7
-        logging.info("Training YOLOv7 model")
-        train_yolov7(data_dir, epochs=num_epochs, batch_size=batch_size)
-    elif model_name == 'yolov8':
-        from src.yolov8_model import train_yolov8
-        logging.info("Training YOLOv8 model")
-        train_yolov8(data_dir, epochs=num_epochs, batch_size=batch_size)
+    elif model_name in ['yolov5', 'yolov6', 'yolov7', 'yolov8']:
+        yolo_module = __import__(f'src.{model_name}_model', fromlist=[f'train_{model_name}'])
+        train_func = getattr(yolo_module, f'train_{model_name}')
+        logging.info(f"Training {model_name.upper()} model")
+        train_func(data_dir, epochs=num_epochs, batch_size=batch_size)
     else:
         logging.error(f"Unsupported model: {model_name}")
         raise ValueError(f"Unsupported model: {model_name}")
@@ -238,7 +227,7 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='Train a model on the Paddy Doctor dataset.')
     parser.add_argument('--data_dir', type=str, default='data/paddy-disease-classification', help='Path to the dataset')
-    parser.add_argument('--model_name', type=str, default='resnet50', choices=['resnet50', 'inception_v3', 'fasterrcnn', 'retinanet', 'ssd'], help='Model to train')
+    parser.add_argument('--model_name', type=str, default='resnet50', choices=['resnet50', 'inception_v3', 'fasterrcnn', 'retinanet', 'ssd', 'yolov5', 'yolov6', 'yolov7', 'yolov8'], help='Model to train')
     parser.add_argument('--num_epochs', type=int, default=10, help='Number of epochs to train')
     parser.add_argument('--batch_size', type=int, default=32, help='Batch size for training')
     parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate for training')
