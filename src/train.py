@@ -21,66 +21,47 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
         model = YOLO(f"{model_name}.yaml")
         results = model.train(data=train_loader, epochs=num_epochs, imgsz=640, batch=batch_size, save_dir=output_dir)
     else:
-        model = get_model(model_name, num_classes=num_classes)
+        model = get_model(model_name, num_classes=num_classes + 1)  # Add 1 for background class
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         print(device)
         model.to(device)
         
-        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+        params = [p for p in model.parameters() if p.requires_grad]
+        optimizer = torch.optim.SGD(params, lr=learning_rate, momentum=0.9, weight_decay=0.0005)
         
         for epoch in range(num_epochs):
             model.train()
             total_loss = 0
-            for batch in train_loader:
-                optimizer.zero_grad()
-                if model_name in ['fasterrcnn', 'retinanet', 'ssd']:
-                    images, targets = batch
-                    images = list(image.to(device) for image in images)
-                    targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-                    loss_dict = model(images, targets)
-                    loss = sum(loss for loss in loss_dict.values())
-                elif model_name.startswith('yolo'):
-                    # YOLO models are handled separately in the main loop
-                    continue
-                else:
-                    inputs, labels = batch
-                    inputs, labels = inputs.to(device), labels.to(device)
-                    outputs = model(inputs)
-                    loss = torch.nn.functional.cross_entropy(outputs, labels)
+            for images, targets in train_loader:
+                images = list(image.to(device) for image in images)
+                targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
                 
-                loss.backward()
+                loss_dict = model(images, targets)
+                losses = sum(loss for loss in loss_dict.values())
+                
+                optimizer.zero_grad()
+                losses.backward()
                 optimizer.step()
-                total_loss += loss.item()
+                
+                total_loss += losses.item()
             
             avg_loss = total_loss / len(train_loader)
             logging.info(f"Epoch {epoch+1}/{num_epochs}, Average Loss: {avg_loss:.4f}")
             
             # Evaluate on validation set
             model.eval()
-            correct = 0
-            total = 0
+            total_val_loss = 0
             with torch.no_grad():
-                for batch in val_loader:
-                    if model_name in ['fasterrcnn', 'retinanet', 'ssd']:
-                        images, targets = batch
-                        images = list(image.to(device) for image in images)
-                        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-                        outputs = model(images)
-                        # TODO: Implement custom evaluation for object detection models
-                    elif model_name.startswith('yolo'):
-                        # YOLO models are handled separately in the main loop
-                        continue
-                    else:
-                        inputs, labels = batch
-                        inputs, labels = inputs.to(device), labels.to(device)
-                        outputs = model(inputs)
-                        _, predicted = torch.max(outputs.data, 1)
-                        total += labels.size(0)
-                        correct += (predicted == labels).sum().item()
+                for images, targets in val_loader:
+                    images = list(image.to(device) for image in images)
+                    targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+                    
+                    loss_dict = model(images, targets)
+                    losses = sum(loss for loss in loss_dict.values())
+                    total_val_loss += losses.item()
             
-            if model_name not in ['fasterrcnn', 'retinanet', 'ssd']:
-                accuracy = 100 * correct / total
-                logging.info(f"Epoch {epoch+1}/{num_epochs}, Validation Accuracy: {accuracy:.2f}%")
+            avg_val_loss = total_val_loss / len(val_loader)
+            logging.info(f"Epoch {epoch+1}/{num_epochs}, Validation Loss: {avg_val_loss:.4f}")
         
         torch.save(model.state_dict(), os.path.join(output_dir, f'{model_name}_model.pth'))
         results = f"Training completed for {model_name}"

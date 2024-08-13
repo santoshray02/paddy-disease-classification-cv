@@ -121,11 +121,11 @@ class PaddyDiseaseDataset(torch.utils.data.Dataset):
         for idx, class_name in enumerate(sorted(os.listdir(root))):
             class_dir = os.path.join(root, class_name)
             if os.path.isdir(class_dir):
-                self.class_to_idx[class_name] = idx
+                self.class_to_idx[class_name] = idx + 1  # Start labels from 1
                 for img_name in os.listdir(class_dir):
                     if img_name.lower().endswith(('.png', '.jpg', '.jpeg')):
                         self.imgs.append(os.path.join(class_name, img_name))
-                        self.labels.append(idx)
+                        self.labels.append(idx + 1)  # Start labels from 1
 
     def __getitem__(self, idx):
         img_path = os.path.join(self.root, self.imgs[idx])
@@ -142,13 +142,7 @@ class PaddyDiseaseDataset(torch.utils.data.Dataset):
         target["labels"] = torch.tensor([label], dtype=torch.int64)
         
         if self.transforms is not None:
-            for t in self.transforms:
-                if isinstance(t, T.ToTensor):
-                    img = t(img)
-                elif isinstance(t, T.RandomHorizontalFlip):
-                    if torch.rand(1) < t.p:
-                        img = F.hflip(img)
-                        target["boxes"][:, [0, 2]] = w - target["boxes"][:, [2, 0]]
+            img, target = self.transforms(img, target)
         
         return img, target
 
