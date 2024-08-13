@@ -25,17 +25,24 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model.to(device)
         
-        criterion = torch.nn.CrossEntropyLoss()
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
         
         for epoch in range(num_epochs):
             model.train()
             total_loss = 0
-            for inputs, labels in train_loader:
-                inputs, labels = inputs.to(device), labels.to(device)
+            for batch in train_loader:
                 optimizer.zero_grad()
-                outputs = model(inputs)
-                loss = criterion(outputs, labels)
+                if model_name in ['fasterrcnn', 'retinanet', 'ssd']:
+                    images = list(image.to(device) for image in batch[0])
+                    targets = [{k: v.to(device) for k, v in t.items()} for t in batch[1]]
+                    loss_dict = model(images, targets)
+                    loss = sum(loss for loss in loss_dict.values())
+                else:
+                    inputs, labels = batch
+                    inputs, labels = inputs.to(device), labels.to(device)
+                    outputs = model(inputs)
+                    loss = torch.nn.functional.cross_entropy(outputs, labels)
+                
                 loss.backward()
                 optimizer.step()
                 total_loss += loss.item()
@@ -48,15 +55,23 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
             correct = 0
             total = 0
             with torch.no_grad():
-                for inputs, labels in val_loader:
-                    inputs, labels = inputs.to(device), labels.to(device)
-                    outputs = model(inputs)
-                    _, predicted = torch.max(outputs.data, 1)
-                    total += labels.size(0)
-                    correct += (predicted == labels).sum().item()
+                for batch in val_loader:
+                    if model_name in ['fasterrcnn', 'retinanet', 'ssd']:
+                        images = list(image.to(device) for image in batch[0])
+                        targets = [{k: v.to(device) for k, v in t.items()} for t in batch[1]]
+                        outputs = model(images)
+                        # Implement custom evaluation for object detection models
+                    else:
+                        inputs, labels = batch
+                        inputs, labels = inputs.to(device), labels.to(device)
+                        outputs = model(inputs)
+                        _, predicted = torch.max(outputs.data, 1)
+                        total += labels.size(0)
+                        correct += (predicted == labels).sum().item()
             
-            accuracy = 100 * correct / total
-            logging.info(f"Epoch {epoch+1}/{num_epochs}, Validation Accuracy: {accuracy:.2f}%")
+            if model_name not in ['fasterrcnn', 'retinanet', 'ssd']:
+                accuracy = 100 * correct / total
+                logging.info(f"Epoch {epoch+1}/{num_epochs}, Validation Accuracy: {accuracy:.2f}%")
         
         torch.save(model.state_dict(), os.path.join(output_dir, f'{model_name}_model.pth'))
         results = f"Training completed for {model_name}"
