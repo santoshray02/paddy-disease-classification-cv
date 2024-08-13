@@ -26,9 +26,11 @@ def load_classification_data(data_dir, batch_size=32, train_ratio=0.8):
 
     def is_valid_file(x):
         path_parts = os.path.normpath(x).split(os.sep)
-        if '.ipynb_checkpoints' in path_parts or any(part.startswith('.') for part in path_parts):
-            return None
-        return x
+        if 'ipynb_checkpoints' in path_parts:
+                    # if 'ipynb_checkpoints' in path_parts or any(part.startswith('.') for part in path_parts):
+
+            return 1
+        return 0
 
     try:
         full_dataset = datasets.ImageFolder(root=data_dir, transform=transform, is_valid_file=is_valid_file)
@@ -83,8 +85,24 @@ def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
         transforms.ToTensor(),
     ])
 
+    # def is_valid_file(x):
+    #     return not any(part.startswith('.') for part in os.path.normpath(x).split(os.sep))
+
     def is_valid_file(x):
-        return not any(part.startswith('.') for part in os.path.normpath(x).split(os.sep))
+        path_parts = os.path.normpath(x).split(os.sep)
+        if 'test' in path_parts:
+                    # if 'ipynb_checkpoints' in path_parts or any(part.startswith('.') for part in path_parts):
+
+            return 1
+        if 'train' in path_parts:
+                    # if 'ipynb_checkpoints' in path_parts or any(part.startswith('.') for part in path_parts):
+
+            return 1
+        if 'ipynb_checkpoints' in path_parts:
+                    # if 'ipynb_checkpoints' in path_parts or any(part.startswith('.') for part in path_parts):
+
+            return 1
+        return 0
 
     full_dataset = datasets.ImageFolder(root=data_dir, transform=transform, is_valid_file=is_valid_file)
     
