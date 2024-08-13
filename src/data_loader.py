@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader, random_split
 from torchvision.datasets import CocoDetection
 from pycocotools.coco import COCO
 import torchvision.transforms as T
+import torchvision.transforms.functional as F
 from PIL import Image
 
 def load_data(data_dir, batch_size, model_type, train_ratio=0.8):
@@ -162,6 +163,11 @@ class Compose:
         for t in self.transforms:
             if isinstance(t, (T.ToTensor, T.Normalize)):
                 image = t(image)
+            elif isinstance(t, T.RandomHorizontalFlip):
+                if torch.rand(1) < t.p:
+                    image = F.hflip(image)
+                    if target is not None:
+                        target["boxes"][:, [0, 2]] = 1 - target["boxes"][:, [2, 0]]
             else:
                 image, target = t(image, target)
         return image, target
