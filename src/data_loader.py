@@ -2,6 +2,9 @@ import os
 import torch
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, random_split
+import torchvision.transforms as T
+from PIL import Image
+import xml.etree.ElementTree as ET
 import torchvision.transforms.functional as F
 import torchvision.transforms as T
 
@@ -83,35 +86,19 @@ def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
     """
     Load and preprocess data for object detection models.
     """
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-    ])
+    def get_transform(train):
+        transforms = []
+        transforms.append(T.ToTensor())
+        if train:
+            transforms.append(T.RandomHorizontalFlip(0.5))
+        return T.Compose(transforms)
 
-    # def is_valid_file(x):
-    #     return not any(part.startswith('.') for part in os.path.normpath(x).split(os.sep))
-
-    def is_valid_file(x):
-        path_parts = os.path.normpath(x).split(os.sep)
-        if 'test' in path_parts:
-                    # if 'ipynb_checkpoints' in path_parts or any(part.startswith('.') for part in path_parts):
-
-            return 1
-        if 'train' in path_parts:
-                    # if 'ipynb_checkpoints' in path_parts or any(part.startswith('.') for part in path_parts):
-
-            return 1
-        if 'ipynb_checkpoints' in path_parts:
-                    # if 'ipynb_checkpoints' in path_parts or any(part.startswith('.') for part in path_parts):
-
-            return 1
-        return 0
-
-    full_dataset = datasets.ImageFolder(root=data_dir, transform=transform, is_valid_file=is_valid_file)
+    dataset = PaddyDiseaseDataset(data_dir, get_transform(train=True))
     
     # Split the dataset
-    train_size = int(train_ratio * len(full_dataset))
-    val_size = len(full_dataset) - train_size
-    train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
+    train_size = int(train_ratio * len(dataset))
+    val_size = len(dataset) - train_size
+    train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
 
     def collate_fn(batch):
         return tuple(zip(*batch))
@@ -119,4 +106,42 @@ def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
 
-    return train_loader, val_loader, None, full_dataset.classes
+    return train_loader, val_loader, None, ['background', 'paddy_disease']  # Assuming binary classification for now
+
+class PaddyDiseaseDataset(torch.utils.data.Dataset):
+    def __init__(self, root, transforms=None):
+        self.root = root
+        self.transforms = transforms
+        self.imgs = list(sorted(os.listdir(os.path.join(root, "images"))))
+        self.annotations = list(sorted(os.listdir(os.path.join(root, "annotations"))))
+
+    def __getitem__(self, idx):
+        img_path = os.path.join(self.root, "images", self.imgs[idx])
+        ann_path = os.path.join(self.root, "annotations", self.annotations[idx])
+        
+        img = Image.open(img_path).convert("RGB")
+        
+        target = self.parse_voc_xml(ET.parse(ann_path).getroot())
+        
+        if self.transforms is not None:
+            img, target = self.transforms(img, target)
+        
+        return img, target
+
+    def __len__(self):
+        return len(self.imgs)
+
+    def parse_voc_xml(self, node):
+        target = {}
+        boxes = []
+        labels = []
+        for obj in node.findall('object'):
+            bbox = obj.find('bndbox')
+            boxes.append([float(bbox.find('xmin').text),
+                          float(bbox.find('ymin').text),
+                          float(bbox.find('xmax').text),
+                          float(bbox.find('ymax').text)])
+            labels.append(1)  # Assuming all objects are of the same class for now
+        target["boxes"] = torch.as_tensor(boxes, dtype=torch.float32)
+        target["labels"] = torch.as_tensor(labels, dtype=torch.int64)
+        return target
