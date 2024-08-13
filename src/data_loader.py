@@ -87,10 +87,31 @@ def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
     """
     def get_transform(train):
         transforms = []
-        transforms.append(T.ToTensor())
         if train:
             transforms.append(T.RandomHorizontalFlip(0.5))
+        transforms.append(T.ToTensor())
         return T.Compose(transforms)
+
+    class Compose:
+        def __init__(self, transforms):
+            self.transforms = transforms
+
+        def __call__(self, image, target):
+            for t in self.transforms:
+                if isinstance(t, T.RandomHorizontalFlip):
+                    image, target = self.random_horizontal_flip(image, target, t.p)
+                else:
+                    image = t(image)
+            return image, target
+
+        def random_horizontal_flip(self, image, target, p):
+            if random.random() < p:
+                height, width = image.shape[-2:]
+                image = image.flip(-1)
+                bbox = target["boxes"]
+                bbox[:, [0, 2]] = width - bbox[:, [2, 0]]
+                target["boxes"] = bbox
+            return image, target
 
     dataset = PaddyDiseaseDataset(data_dir, get_transform(train=True))
     
@@ -112,7 +133,7 @@ def collate_fn(batch):
 class PaddyDiseaseDataset(torch.utils.data.Dataset):
     def __init__(self, root, transforms=None):
         self.root = root
-        self.transforms = transforms
+        self.transforms = Compose(transforms.transforms) if transforms else None
         self.imgs = []
         self.labels = []
         self.class_to_idx = {}
