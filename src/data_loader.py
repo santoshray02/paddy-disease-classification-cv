@@ -169,7 +169,10 @@ class Compose:
                     if target is not None:
                         target["boxes"][:, [0, 2]] = 1 - target["boxes"][:, [2, 0]]
             else:
-                image, target = t(image, target)
+                if target is not None:
+                    image, target = t(image, target)
+                else:
+                    image = t(image)
         return image, target
 
 def load_yolo_data(data_dir):
