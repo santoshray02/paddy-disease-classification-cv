@@ -35,7 +35,6 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
         
         params = [p for p in model.parameters() if p.requires_grad]
         optimizer = torch.optim.SGD(params, lr=learning_rate, momentum=0.9, weight_decay=0.0005)
-        criterion = torch.nn.CrossEntropyLoss()
         
         for epoch in range(num_epochs):
             model.train()
@@ -48,9 +47,9 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
                     loss_dict = model(images, targets)
                     losses = sum(loss for loss in loss_dict.values())
                 else:
+                    criterion = torch.nn.CrossEntropyLoss()
                     outputs = model(images)
-                    loss = criterion(outputs, targets)
-                    losses = loss
+                    losses = criterion(outputs, targets)
                 
                 optimizer.zero_grad()
                 losses.backward()

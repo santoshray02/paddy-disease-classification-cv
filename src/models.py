@@ -53,7 +53,12 @@ def get_model(model_name, num_classes=None, pretrained=True):
             model.head.classification_head.cls_logits = nn.Conv2d(in_features, num_anchors * num_classes, kernel_size=3, stride=1, padding=1)
         return model
     elif model_name == 'ssd':
-        return ssd300_vgg16(weights='DEFAULT' if pretrained else None)
+        model = ssd300_vgg16(weights='DEFAULT' if pretrained else None)
+        if num_classes is not None:
+            # Replace classification head
+            num_anchors = model.anchor_generator.num_anchors_per_location()[0]
+            model.head.classification_head = nn.Conv2d(model.backbone.out_channels, num_anchors * num_classes, kernel_size=3, padding=1)
+        return model
     elif model_name == 'yolov5':
         from src.yolov5_model import load_yolov5
         return load_yolov5()
