@@ -1,4 +1,5 @@
 import os
+import random
 import torch
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, random_split
@@ -133,7 +134,7 @@ def collate_fn(batch):
 class PaddyDiseaseDataset(torch.utils.data.Dataset):
     def __init__(self, root, transforms=None):
         self.root = root
-        self.transforms = Compose(transforms.transforms) if transforms else None
+        self.transforms = transforms
         self.imgs = []
         self.labels = []
         self.class_to_idx = {}
