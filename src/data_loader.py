@@ -23,7 +23,7 @@ def load_classification_data(data_dir, batch_size=32, train_ratio=0.8):
     ])
 
     def is_valid_file(x):
-        return os.path.basename(os.path.dirname(x))[0] != '.'
+        return not any(part.startswith('.') for part in os.path.normpath(x).split(os.sep))
 
     full_dataset = datasets.ImageFolder(root=data_dir, transform=transform, is_valid_file=is_valid_file)
     
