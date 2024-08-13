@@ -84,7 +84,7 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
             total_loss = 0
             for images, targets in train_loader:
                 images = list(image.to(device) for image in images)
-                targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+                targets = [{k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in t.items()} for t in targets]
 
                 loss_dict = model(images, targets)
                 losses = sum(loss for loss in loss_dict.values())
@@ -105,7 +105,7 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
             with torch.no_grad():
                 for images, targets in val_loader:
                     images = list(image.to(device) for image in images)
-                    targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+                    targets = [{k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in t.items()} for t in targets]
 
                     loss_dict = model(images, targets)
                     losses = sum(loss for loss in loss_dict.values())
