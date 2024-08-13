@@ -85,23 +85,29 @@ def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
     """
     Load and preprocess data for object detection models.
     """
-    transform = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ])
+    def get_transform(train):
+        transforms = []
+        transforms.append(T.ToTensor())
+        if train:
+            transforms.append(T.RandomHorizontalFlip(0.5))
+        return T.Compose(transforms)
 
-    dataset = PaddyDiseaseDataset(data_dir, transform)
+    dataset = PaddyDiseaseDataset(data_dir, get_transform(train=True))
     
     # Split the dataset
     train_size = int(train_ratio * len(dataset))
     val_size = len(dataset) - train_size
     train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    val_dataset.dataset.transforms = get_transform(train=False)
 
-    return train_loader, val_loader, None, list(set(dataset.labels))
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
+
+    return train_loader, val_loader, None, list(dataset.class_to_idx.keys())
+
+def collate_fn(batch):
+    return tuple(zip(*batch))
 
 class PaddyDiseaseDataset(torch.utils.data.Dataset):
     def __init__(self, root, transforms=None):
@@ -109,15 +115,17 @@ class PaddyDiseaseDataset(torch.utils.data.Dataset):
         self.transforms = transforms
         self.imgs = []
         self.labels = []
+        self.class_to_idx = {}
 
         # Assuming the directory structure is: root/class_name/image_files
-        for class_name in os.listdir(root):
+        for idx, class_name in enumerate(sorted(os.listdir(root))):
             class_dir = os.path.join(root, class_name)
             if os.path.isdir(class_dir):
+                self.class_to_idx[class_name] = idx
                 for img_name in os.listdir(class_dir):
                     if img_name.lower().endswith(('.png', '.jpg', '.jpeg')):
                         self.imgs.append(os.path.join(class_name, img_name))
-                        self.labels.append(class_name)
+                        self.labels.append(idx)
 
     def __getitem__(self, idx):
         img_path = os.path.join(self.root, self.imgs[idx])
@@ -125,10 +133,18 @@ class PaddyDiseaseDataset(torch.utils.data.Dataset):
         
         img = Image.open(img_path).convert("RGB")
         
-        if self.transforms is not None:
-            img = self.transforms(img)
+        # Create a dummy bounding box for the entire image
+        h, w = img.size
+        boxes = torch.tensor([[0, 0, w, h]], dtype=torch.float32)
         
-        return img, label
+        target = {}
+        target["boxes"] = boxes
+        target["labels"] = torch.tensor([label], dtype=torch.int64)
+        
+        if self.transforms is not None:
+            img, target = self.transforms(img, target)
+        
+        return img, target
 
     def __len__(self):
         return len(self.imgs)
