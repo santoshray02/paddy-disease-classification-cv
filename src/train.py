@@ -17,22 +17,25 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
     writer = SummaryWriter(log_dir=os.path.join(output_dir, 'tensorboard'))
     
     # Load data
-    train_loader, val_loader, test_loader, classes = load_data(data_dir, batch_size, model_name)
-    num_classes = len(classes)
+    train_loader, val_loader, test_loader, num_classes = load_data(data_dir, batch_size, model_name)
     
     # Initialize model
     if model_name.startswith('yolo'):
         model = YOLO(f"{model_name}.yaml")
         results = model.train(data=train_loader, epochs=num_epochs, imgsz=640, batch=batch_size, save_dir=output_dir)
     else:
-        model = get_model(model_name, num_classes=num_classes)  # No need to add 1 for background class
-        # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        device = torch.device('cpu')
-        print(device)
+        model = get_model(model_name, num_classes=num_classes)
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        print(f"Using device: {device}")
         model.to(device)
+        
+        # For object detection models, we need to set them to training mode
+        if model_name in ['fasterrcnn', 'retinanet', 'ssd']:
+            model.train()
         
         params = [p for p in model.parameters() if p.requires_grad]
         optimizer = torch.optim.SGD(params, lr=learning_rate, momentum=0.9, weight_decay=0.0005)
+        criterion = torch.nn.CrossEntropyLoss()
         
         for epoch in range(num_epochs):
             model.train()
@@ -41,8 +44,13 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
                 images = list(image.to(device) for image in images)
                 targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
                 
-                loss_dict = model(images, targets)
-                losses = sum(loss for loss in loss_dict.values())
+                if model_name in ['fasterrcnn', 'retinanet', 'ssd']:
+                    loss_dict = model(images, targets)
+                    losses = sum(loss for loss in loss_dict.values())
+                else:
+                    outputs = model(images)
+                    loss = criterion(outputs, targets)
+                    losses = loss
                 
                 optimizer.zero_grad()
                 losses.backward()
@@ -66,8 +74,14 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
                     images = list(image.to(device) for image in images)
                     targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
                     
-                    loss_dict = model(images, targets)
-                    losses = sum(loss for loss in loss_dict.values())
+                    if model_name in ['fasterrcnn', 'retinanet', 'ssd']:
+                        loss_dict = model(images, targets)
+                        losses = sum(loss for loss in loss_dict.values())
+                    else:
+                        outputs = model(images)
+                        loss = criterion(outputs, targets)
+                        losses = loss
+                    
                     total_val_loss += losses.item()
             
             avg_val_loss = total_val_loss / len(val_loader)
