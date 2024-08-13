@@ -22,7 +22,10 @@ def load_classification_data(data_dir, batch_size=32, train_ratio=0.8):
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
 
-    full_dataset = datasets.ImageFolder(root=data_dir, transform=transform)
+    def is_valid_file(x):
+        return os.path.basename(os.path.dirname(x))[0] != '.'
+
+    full_dataset = datasets.ImageFolder(root=data_dir, transform=transform, is_valid_file=is_valid_file)
     
     # Split the dataset
     train_size = int(train_ratio * len(full_dataset))
