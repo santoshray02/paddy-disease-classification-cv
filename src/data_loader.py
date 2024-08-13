@@ -149,6 +149,7 @@ class CustomDataset(torch.utils.data.Dataset):
 def get_transform(train):
     transforms = []
     transforms.append(T.ToTensor())
+    transforms.append(T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]))
     if train:
         transforms.append(T.RandomHorizontalFlip(0.5))
     return Compose(transforms)
@@ -159,11 +160,9 @@ class Compose:
 
     def __call__(self, image, target=None):
         for t in self.transforms:
-            if callable(getattr(t, 'forward', None)):
-                # For torchvision transforms that don't accept target
+            if isinstance(t, (T.ToTensor, T.Normalize)):
                 image = t(image)
             else:
-                # For custom transforms that accept both image and target
                 image, target = t(image, target)
         return image, target
 
