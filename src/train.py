@@ -34,13 +34,9 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
             for batch in train_loader:
                 optimizer.zero_grad()
                 if model_name in ['fasterrcnn', 'retinanet', 'ssd']:
-                    images = list(image.to(device) for image in batch[0])
-                    targets = []
-                    for t in batch[1]:
-                        d = {}
-                        d['boxes'] = t['boxes'].to(device)
-                        d['labels'] = t['labels'].to(device)
-                        targets.append(d)
+                    images, targets = batch
+                    images = list(image.to(device) for image in images)
+                    targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
                     loss_dict = model(images, targets)
                     loss = sum(loss for loss in loss_dict.values())
                 else:
@@ -63,13 +59,9 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
             with torch.no_grad():
                 for batch in val_loader:
                     if model_name in ['fasterrcnn', 'retinanet', 'ssd']:
-                        images = list(image.to(device) for image in batch[0])
-                        targets = []
-                        for t in batch[1]:
-                            d = {}
-                            d['boxes'] = t['boxes'].to(device)
-                            d['labels'] = t['labels'].to(device)
-                            targets.append(d)
+                        images, targets = batch
+                        images = list(image.to(device) for image in images)
+                        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
                         outputs = model(images)
                         # TODO: Implement custom evaluation for object detection models
                     else:
