@@ -97,7 +97,8 @@ def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
         def __init__(self, transforms):
             self.transforms = transforms
 
-        def __call__(self, image, target):
+        def __call__(self, data):
+            image, target = data
             for t in self.transforms:
                 if isinstance(t, T.RandomHorizontalFlip):
                     image, target = self.random_horizontal_flip(image, target, t.p)
@@ -167,7 +168,7 @@ class PaddyDiseaseDataset(torch.utils.data.Dataset):
         target["labels"] = torch.tensor([label], dtype=torch.int64)
         
         if self.transforms is not None:
-            img, target = self.transforms(img, target)
+            img, target = self.transforms((img, target))
         
         return img, target
 
