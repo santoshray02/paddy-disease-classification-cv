@@ -131,7 +131,7 @@ class CustomDataset(torch.utils.data.Dataset):
         label = self.labels[idx]
         
         # Create a dummy bounding box for the entire image
-        h, w = img.size
+        w, h = img.size
         boxes = torch.tensor([[0, 0, w, h]], dtype=torch.float32)
         
         target = {}
@@ -139,7 +139,7 @@ class CustomDataset(torch.utils.data.Dataset):
         target["labels"] = torch.tensor([label], dtype=torch.int64)
         
         if self.transforms is not None:
-            img, target = self.transforms(img, target)
+            img = self.transforms(img)
 
         return img, target
 
@@ -157,10 +157,13 @@ class Compose:
     def __init__(self, transforms):
         self.transforms = transforms
 
-    def __call__(self, image, target):
+    def __call__(self, image, target=None):
         for t in self.transforms:
-            image, target = t(image, target)
-        return image, target
+            if target is None:
+                image = t(image)
+            else:
+                image, target = t(image, target)
+        return image if target is None else (image, target)
 
 def load_yolo_data(data_dir):
     """
