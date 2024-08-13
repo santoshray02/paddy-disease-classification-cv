@@ -73,6 +73,7 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
         # Load the model
         model = get_model(model_name, num_classes=num_classes)
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        print(device)
         model.to(device)
         
         params = [p for p in model.parameters() if p.requires_grad]
