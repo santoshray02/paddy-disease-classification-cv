@@ -90,7 +90,7 @@ def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
         transforms.append(T.ToTensor())
         if train:
             transforms.append(T.RandomHorizontalFlip(0.5))
-        return T.Compose(transforms)
+        return transforms
 
     dataset = PaddyDiseaseDataset(data_dir, get_transform(train=True))
     
@@ -134,7 +134,7 @@ class PaddyDiseaseDataset(torch.utils.data.Dataset):
         img = Image.open(img_path).convert("RGB")
         
         # Create a dummy bounding box for the entire image
-        h, w = img.size
+        w, h = img.size
         boxes = torch.tensor([[0, 0, w, h]], dtype=torch.float32)
         
         target = {}
@@ -142,7 +142,13 @@ class PaddyDiseaseDataset(torch.utils.data.Dataset):
         target["labels"] = torch.tensor([label], dtype=torch.int64)
         
         if self.transforms is not None:
-            img, target = self.transforms(img, target)
+            for t in self.transforms:
+                if isinstance(t, T.ToTensor):
+                    img = t(img)
+                elif isinstance(t, T.RandomHorizontalFlip):
+                    if torch.rand(1) < t.p:
+                        img = F.hflip(img)
+                        target["boxes"][:, [0, 2]] = w - target["boxes"][:, [2, 0]]
         
         return img, target
 
