@@ -83,8 +83,14 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
             model.train()
             total_loss = 0
             for images, targets in train_loader:
+                print("Targets:", targets)  # Debug print to check structure of targets
                 images = list(image.to(device) for image in images)
-                targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+
+                # Ensure targets are correctly structured
+                if isinstance(targets, list) and isinstance(targets[0], dict):
+                    targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+                else:
+                    raise ValueError("Targets must be a list of dictionaries with keys like 'boxes' and 'labels'.")
 
                 loss_dict = model(images, targets)
                 losses = sum(loss for loss in loss_dict.values())
@@ -105,8 +111,13 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
             with torch.no_grad():
                 for images, targets in val_loader:
                     images = list(image.to(device) for image in images)
-                    targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-    
+                    
+                    # Ensure targets are correctly structured
+                    if isinstance(targets, list) and isinstance(targets[0], dict):
+                        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+                    else:
+                        raise ValueError("Targets must be a list of dictionaries with keys like 'boxes' and 'labels'.")
+
                     loss_dict = model(images, targets)
                     losses = sum(loss for loss in loss_dict.values())
                     val_loss += losses.item()
