@@ -4,6 +4,7 @@ from ultralytics import YOLO
 from data_loader import load_data
 import torch
 from models import get_model
+from torch.utils.tensorboard import SummaryWriter
 
 def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs=100, learning_rate=0.01):
     os.makedirs(output_dir, exist_ok=True)
@@ -11,6 +12,9 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
     # Set up logging
     log_file = os.path.join(output_dir, f'{model_name}_training.log')
     logging.basicConfig(filename=log_file, level=logging.INFO, format='%(asctime)s - %(message)s')
+    
+    # Set up TensorBoard
+    writer = SummaryWriter(log_dir=os.path.join(output_dir, 'tensorboard'))
     
     # Load data
     train_loader, val_loader, test_loader, classes = load_data(data_dir, batch_size, model_name)
@@ -32,7 +36,7 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
         for epoch in range(num_epochs):
             model.train()
             total_loss = 0
-            for images, targets in train_loader:
+            for i, (images, targets) in enumerate(train_loader):
                 images = list(image.to(device) for image in images)
                 targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
                 
@@ -44,9 +48,14 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
                 optimizer.step()
                 
                 total_loss += losses.item()
+                
+                if i % 10 == 0:  # Log every 10 batches
+                    logging.info(f"Epoch {epoch+1}/{num_epochs}, Batch {i}/{len(train_loader)}, Loss: {losses.item():.4f}")
+                    writer.add_scalar('Training loss', losses.item(), epoch * len(train_loader) + i)
             
             avg_loss = total_loss / len(train_loader)
             logging.info(f"Epoch {epoch+1}/{num_epochs}, Average Loss: {avg_loss:.4f}")
+            writer.add_scalar('Average training loss', avg_loss, epoch)
             
             # Evaluate on validation set
             model.eval()
@@ -62,11 +71,13 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
             
             avg_val_loss = total_val_loss / len(val_loader)
             logging.info(f"Epoch {epoch+1}/{num_epochs}, Validation Loss: {avg_val_loss:.4f}")
+            writer.add_scalar('Validation loss', avg_val_loss, epoch)
         
         torch.save(model.state_dict(), os.path.join(output_dir, f'{model_name}_model.pth'))
         results = f"Training completed for {model_name}"
     
     logging.info(f"Training completed. Results: {results}")
+    writer.close()
 
 if __name__ == "__main__":
     import argparse
