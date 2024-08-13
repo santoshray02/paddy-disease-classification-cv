@@ -26,6 +26,7 @@ def load_classification_data(data_dir, batch_size=32, train_ratio=0.8):
 
     def is_valid_file(x):
         if not any(part.startswith('.') for part in os.path.normpath(x).split(os.sep)):
+            print(x)
             return x
         return None
 
