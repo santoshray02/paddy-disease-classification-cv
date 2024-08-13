@@ -130,10 +130,18 @@ class CustomDataset(torch.utils.data.Dataset):
         img = Image.open(img_path).convert("RGB")
         label = self.labels[idx]
         
+        # Create a dummy bounding box for the entire image
+        h, w = img.size
+        boxes = torch.tensor([[0, 0, w, h]], dtype=torch.float32)
+        
+        target = {}
+        target["boxes"] = boxes
+        target["labels"] = torch.tensor([label], dtype=torch.int64)
+        
         if self.transforms is not None:
-            img = self.transforms(img)
+            img, target = self.transforms(img, target)
 
-        return img, label
+        return img, target
 
     def __len__(self):
         return len(self.imgs)
