@@ -65,6 +65,12 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
         
         # Modify the box regression head
         model.head.regression_head.bbox_reg = torch.nn.Conv2d(in_features, num_anchors * 4, kernel_size=3, stride=1, padding=1)
+    elif model_name == 'fasterrcnn':
+        train_loader, val_loader, classes = load_object_detection_data(data_dir, batch_size)
+        num_classes = len(classes)
+        
+        # Load the model
+        model = get_model(model_name, num_classes=num_classes)
     else:
         logging.error(f"Unsupported model: {model_name}")
         raise ValueError(f"Unsupported model: {model_name}")
@@ -99,7 +105,7 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
             project=output_dir,
             hyp={'lr0': learning_rate}
         )
-    elif model_name == 'retinanet':
+    elif model_name in ['retinanet', 'fasterrcnn']:
         train_loader, val_loader, _ = load_object_detection_data(data_dir, batch_size)
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model.to(device)
@@ -150,8 +156,8 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
             avg_val_loss = val_loss / len(val_loader)
             logging.info(f"Epoch {epoch+1}/{num_epochs}, Validation Loss: {avg_val_loss:.4f}")
         
-        torch.save(model.state_dict(), os.path.join(output_dir, 'retinanet_model.pth'))
-        results = "Training completed for RetinaNet"
+        torch.save(model.state_dict(), os.path.join(output_dir, f'{model_name}_model.pth'))
+        results = f"Training completed for {model_name}"
     
     logging.info(f"Training completed. Results: {results}")
 

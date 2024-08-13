@@ -37,7 +37,13 @@ def get_model(model_name, num_classes=None, pretrained=True):
     if model_name == 'resnet50' or model_name == 'inception_v3':
         return PaddyDiseaseClassifier(num_classes, model_name)
     elif model_name == 'fasterrcnn':
-        return fasterrcnn_resnet50_fpn(pretrained=pretrained)
+        model = fasterrcnn_resnet50_fpn(pretrained=pretrained)
+        if num_classes is not None:
+            # Get number of input features for the classifier
+            in_features = model.roi_heads.box_predictor.cls_score.in_features
+            # Replace the pre-trained head with a new one
+            model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
+        return model
     elif model_name == 'retinanet':
         return retinanet_resnet50_fpn(pretrained=pretrained)
     elif model_name == 'ssd':
