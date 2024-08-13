@@ -91,7 +91,7 @@ def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
         if train:
             transforms.append(T.RandomHorizontalFlip(0.5))
         transforms.append(T.ToTensor())
-        return T.Compose(transforms)
+        return Compose(transforms)
 
     class Compose:
         def __init__(self, transforms):
@@ -101,17 +101,19 @@ def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
             for t in self.transforms:
                 if isinstance(t, T.RandomHorizontalFlip):
                     image, target = self.random_horizontal_flip(image, target, t.p)
-                else:
+                elif isinstance(t, T.ToTensor):
                     image = t(image)
+                else:
+                    image, target = t(image, target)
             return image, target
 
         def random_horizontal_flip(self, image, target, p):
             if random.random() < p:
-                height, width = image.shape[-2:]
-                image = image.flip(-1)
-                bbox = target["boxes"]
-                bbox[:, [0, 2]] = width - bbox[:, [2, 0]]
-                target["boxes"] = bbox
+                image = F.hflip(image)
+                if "boxes" in target:
+                    bbox = target["boxes"]
+                    bbox[:, [0, 2]] = image.width - bbox[:, [2, 0]]
+                    target["boxes"] = bbox
             return image, target
 
     dataset = PaddyDiseaseDataset(data_dir, get_transform(train=True))
