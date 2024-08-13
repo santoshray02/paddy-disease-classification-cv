@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torchvision.models as models
 from torchvision.models.detection import fasterrcnn_resnet50_fpn, retinanet_resnet50_fpn
+from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.ssd import ssd300_vgg16
 
 class PaddyDiseaseClassifier(nn.Module):

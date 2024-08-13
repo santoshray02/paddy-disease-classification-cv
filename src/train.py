@@ -7,6 +7,7 @@ import torch
 from torchvision.models.detection import retinanet_resnet50_fpn, RetinaNet
 from torchvision.models.detection.anchor_utils import AnchorGenerator
 from torchvision.models.detection.retinanet import RetinaNet_ResNet50_FPN_Weights
+from models import get_model
 
 def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs=100, learning_rate=0.01, num_classes=None):
     os.makedirs(output_dir, exist_ok=True)
