@@ -35,7 +35,12 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
                 optimizer.zero_grad()
                 if model_name in ['fasterrcnn', 'retinanet', 'ssd']:
                     images = list(image.to(device) for image in batch[0])
-                    targets = [{k: v.to(device) for k, v in t.items()} for t in batch[1]]
+                    targets = []
+                    for t in batch[1]:
+                        d = {}
+                        d['boxes'] = t['boxes'].to(device)
+                        d['labels'] = t['labels'].to(device)
+                        targets.append(d)
                     loss_dict = model(images, targets)
                     loss = sum(loss for loss in loss_dict.values())
                 else:
@@ -59,9 +64,14 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
                 for batch in val_loader:
                     if model_name in ['fasterrcnn', 'retinanet', 'ssd']:
                         images = list(image.to(device) for image in batch[0])
-                        targets = [{k: v.to(device) for k, v in t.items()} for t in batch[1]]
+                        targets = []
+                        for t in batch[1]:
+                            d = {}
+                            d['boxes'] = t['boxes'].to(device)
+                            d['labels'] = t['labels'].to(device)
+                            targets.append(d)
                         outputs = model(images)
-                        # Implement custom evaluation for object detection models
+                        # TODO: Implement custom evaluation for object detection models
                     else:
                         inputs, labels = batch
                         inputs, labels = inputs.to(device), labels.to(device)
