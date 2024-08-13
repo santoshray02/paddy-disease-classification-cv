@@ -25,7 +25,7 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
         results = model.train(data=train_loader, epochs=num_epochs, imgsz=640, batch=batch_size, save_dir=output_dir)
     else:
         model = get_model(model_name, num_classes=num_classes)
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        device = torch.device('cpu')
         print(f"Using device: {device}")
         model.to(device)
         
