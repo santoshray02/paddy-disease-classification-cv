@@ -25,10 +25,10 @@ def load_classification_data(data_dir, batch_size=32, train_ratio=0.8):
     ])
 
     def is_valid_file(x):
-        if not any(part.startswith('.') for part in os.path.normpath(x).split(os.sep)):
-            print(x)
-            return x
-        return None
+        path_parts = os.path.normpath(x).split(os.sep)
+        if '.ipynb_checkpoints' in path_parts or any(part.startswith('.') for part in path_parts):
+            return None
+        return x
 
     try:
         full_dataset = datasets.ImageFolder(root=data_dir, transform=transform, is_valid_file=is_valid_file)
