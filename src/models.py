@@ -38,7 +38,7 @@ def get_model(model_name, num_classes=None, pretrained=True):
     if model_name == 'resnet50' or model_name == 'inception_v3':
         return PaddyDiseaseClassifier(num_classes, model_name)
     elif model_name == 'fasterrcnn':
-        model = fasterrcnn_resnet50_fpn(pretrained=pretrained)
+        model = fasterrcnn_resnet50_fpn(weights='DEFAULT' if pretrained else None)
         if num_classes is not None:
             # Get number of input features for the classifier
             in_features = model.roi_heads.box_predictor.cls_score.in_features
@@ -46,9 +46,17 @@ def get_model(model_name, num_classes=None, pretrained=True):
             model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
         return model
     elif model_name == 'retinanet':
-        return retinanet_resnet50_fpn(pretrained=pretrained)
+        model = retinanet_resnet50_fpn(weights='DEFAULT' if pretrained else None)
+        if num_classes is not None:
+            # Get number of input features for the classifier
+            in_features = model.head.classification_head.cls_logits.in_channels
+            num_anchors = model.head.classification_head.num_anchors
+            # Replace the pre-trained head with a new one
+            model.head.classification_head.num_classes = num_classes
+            model.head.classification_head.cls_logits = nn.Conv2d(in_features, num_anchors * num_classes, kernel_size=3, stride=1, padding=1)
+        return model
     elif model_name == 'ssd':
-        return ssd300_vgg16(pretrained=pretrained)
+        return ssd300_vgg16(weights='DEFAULT' if pretrained else None)
     elif model_name == 'yolov5':
         from src.yolov5_model import load_yolov5
         return load_yolov5()

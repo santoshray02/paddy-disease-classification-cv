@@ -66,50 +66,15 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
         
         # Modify the box regression head
         model.head.regression_head.bbox_reg = torch.nn.Conv2d(in_features, num_anchors * 4, kernel_size=3, stride=1, padding=1)
-    elif model_name == 'fasterrcnn':
+    elif model_name in ['retinanet', 'fasterrcnn']:
         train_loader, val_loader, classes = load_object_detection_data(data_dir, batch_size)
         num_classes = len(classes)
         
         # Load the model
         model = get_model(model_name, num_classes=num_classes)
-    else:
-        logging.error(f"Unsupported model: {model_name}")
-        raise ValueError(f"Unsupported model: {model_name}")
-    
-    # Train the model
-    logging.info(f"Training {model_name} model")
-    
-    if model_name.startswith(('yolov8', 'yolov5')):
-        results = model.train(
-            data=data_yaml,
-            epochs=num_epochs,
-            imgsz=640,
-            batch=batch_size,
-            save_dir=output_dir,
-            lr0=learning_rate
-        )
-    elif model_name.startswith('yolov6'):
-        results = model.train(
-            data_yaml=data_yaml,
-            epochs=num_epochs,
-            batch_size=batch_size,
-            img_size=640,
-            output_dir=output_dir,
-            lr=learning_rate
-        )
-    elif model_name.startswith('yolov7'):
-        results = model.train(
-            data=data_yaml,
-            epochs=num_epochs,
-            batch_size=batch_size,
-            img_size=640,
-            project=output_dir,
-            hyp={'lr0': learning_rate}
-        )
-    elif model_name in ['retinanet', 'fasterrcnn']:
-        train_loader, val_loader, _ = load_object_detection_data(data_dir, batch_size)
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model.to(device)
+        
         params = [p for p in model.parameters() if p.requires_grad]
         optimizer = torch.optim.SGD(params, lr=learning_rate, momentum=0.9, weight_decay=0.0005)
         lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
@@ -119,11 +84,7 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
             total_loss = 0
             for images, targets in train_loader:
                 images = list(image.to(device) for image in images)
-                targets = [{k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in t.items()} if isinstance(t, dict) else t for t in targets]
-
-                # Skip this batch if any target is empty or not in the correct format
-                if any(not isinstance(t, dict) or len(t.get('boxes', [])) == 0 for t in targets):
-                    continue
+                targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
                 loss_dict = model(images, targets)
                 losses = sum(loss for loss in loss_dict.values())
@@ -132,11 +93,11 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
                 optimizer.zero_grad()
                 losses.backward()
                 optimizer.step()
-        
-            avg_loss = total_loss / len(train_loader)
-            logging.info(f"Epoch {epoch+1}/{num_epochs}, Average Loss: {avg_loss:.4f}")
             
             lr_scheduler.step()
+            
+            avg_loss = total_loss / len(train_loader)
+            logging.info(f"Epoch {epoch+1}/{num_epochs}, Average Loss: {avg_loss:.4f}")
             
             # Evaluate on validation set
             model.eval()
@@ -144,11 +105,7 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
             with torch.no_grad():
                 for images, targets in val_loader:
                     images = list(image.to(device) for image in images)
-                    targets = [{k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in t.items()} if isinstance(t, dict) else t for t in targets]
-    
-                    # Skip this batch if any target is empty or not in the correct format
-                    if any(not isinstance(t, dict) or len(t.get('boxes', [])) == 0 for t in targets):
-                        continue
+                    targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
     
                     loss_dict = model(images, targets)
                     losses = sum(loss for loss in loss_dict.values())
@@ -159,6 +116,9 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
         
         torch.save(model.state_dict(), os.path.join(output_dir, f'{model_name}_model.pth'))
         results = f"Training completed for {model_name}"
+    else:
+        logging.error(f"Unsupported model: {model_name}")
+        raise ValueError(f"Unsupported model: {model_name}")
     
     logging.info(f"Training completed. Results: {results}")
 
