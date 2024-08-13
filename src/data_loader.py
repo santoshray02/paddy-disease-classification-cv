@@ -151,7 +151,7 @@ def get_transform(train):
     transforms.append(T.ToTensor())
     if train:
         transforms.append(T.RandomHorizontalFlip(0.5))
-    return T.Compose(transforms)
+    return Compose(transforms)
 
 class Compose:
     def __init__(self, transforms):
@@ -159,11 +159,13 @@ class Compose:
 
     def __call__(self, image, target=None):
         for t in self.transforms:
-            if target is None:
+            if callable(getattr(t, 'forward', None)):
+                # For torchvision transforms that don't accept target
                 image = t(image)
             else:
+                # For custom transforms that accept both image and target
                 image, target = t(image, target)
-        return image if target is None else (image, target)
+        return image, target
 
 def load_yolo_data(data_dir):
     """
