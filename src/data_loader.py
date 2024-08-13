@@ -6,7 +6,6 @@ import torchvision.transforms as T
 from PIL import Image
 import xml.etree.ElementTree as ET
 import torchvision.transforms.functional as F
-import torchvision.transforms as T
 
 def load_data(data_dir, batch_size, model_type, train_ratio=0.8):
     """
