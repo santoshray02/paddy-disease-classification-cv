@@ -44,12 +44,18 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
                 targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
                 
                 if model_name in ['fasterrcnn', 'retinanet', 'ssd']:
+                    # Ensure labels are 0-indexed and within the correct range
+                    for target in targets:
+                        target['labels'] = target['labels'] - 1  # Assuming labels start from 1
+                        target['labels'] = torch.clamp(target['labels'], 0, num_classes - 1)
                     loss_dict = model(images, targets)
                     losses = sum(loss for loss in loss_dict.values())
                 else:
                     criterion = torch.nn.CrossEntropyLoss()
                     outputs = model(images)
                     target_labels = torch.cat([t['labels'] for t in targets])
+                    target_labels = target_labels - 1  # Assuming labels start from 1
+                    target_labels = torch.clamp(target_labels, 0, num_classes - 1)
                     losses = criterion(outputs, target_labels)
                 
                 optimizer.zero_grad()
@@ -75,11 +81,17 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
                     targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
                     
                     if model_name in ['fasterrcnn', 'retinanet', 'ssd']:
+                        # Ensure labels are 0-indexed and within the correct range
+                        for target in targets:
+                            target['labels'] = target['labels'] - 1  # Assuming labels start from 1
+                            target['labels'] = torch.clamp(target['labels'], 0, num_classes - 1)
                         loss_dict = model(images, targets)
                         losses = sum(loss for loss in loss_dict.values())
                     else:
                         outputs = model(images)
                         target_labels = torch.cat([t['labels'] for t in targets])
+                        target_labels = target_labels - 1  # Assuming labels start from 1
+                        target_labels = torch.clamp(target_labels, 0, num_classes - 1)
                         losses = criterion(outputs, target_labels)
                     
                     total_val_loss += losses.item()
