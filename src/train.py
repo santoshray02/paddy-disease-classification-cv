@@ -125,15 +125,14 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
 if __name__ == "__main__":
     import argparse
     
-    parser = argparse.ArgumentParser(description='Train a YOLO model on the dataset.')
+    parser = argparse.ArgumentParser(description='Train a model on the dataset.')
     parser.add_argument('--data_dir', type=str, required=True, help='Path to the dataset directory')
-    parser.add_argument('--model_name', type=str, default='yolov8n', help='Model to use for training (e.g., yolov8n, yolov5s, yolov6n, yolov7, retinanet)')
-    parser.add_argument('--num_classes', type=int, help='Number of classes (required for RetinaNet)')
-    parser.add_argument('--batch_size', type=int, default=16, help='Batch size for training')
+    parser.add_argument('--model_name', type=str, default='resnet50', help='Model to use for training')
+    parser.add_argument('--batch_size', type=int, default=32, help='Batch size for training')
     parser.add_argument('--output_dir', type=str, default='./output', help='Directory to save output files')
     parser.add_argument('--num_epochs', type=int, default=100, help='Number of epochs for training')
-    parser.add_argument('--learning_rate', type=float, default=0.01, help='Learning rate for training')
+    parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate for training')
     
     args = parser.parse_args()
     
-    train(args.data_dir, args.model_name, args.batch_size, args.output_dir, args.num_epochs, args.learning_rate, args.num_classes)
+    train(args.data_dir, args.model_name, args.batch_size, args.output_dir, args.num_epochs, args.learning_rate)
