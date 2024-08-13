@@ -2,6 +2,8 @@ import os
 import torch
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, random_split
+import torchvision.transforms.functional as F
+import torchvision.transforms as T
 
 def load_data(data_dir, batch_size, model_type, train_ratio=0.8):
     """
