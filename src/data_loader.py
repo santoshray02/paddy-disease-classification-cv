@@ -154,6 +154,7 @@ class PaddyDiseaseDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         img_path = os.path.join(self.root, self.imgs[idx])
         label = self.labels[idx]
+        print(img_path)
         
         img = Image.open(img_path).convert("RGB")
         
