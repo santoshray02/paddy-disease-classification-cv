@@ -1,9 +1,13 @@
 import os
+import sys
 import logging
 from ultralytics import YOLO
 from data_loader import load_yolo_data, load_object_detection_data, load_classification_data, collate_fn
 import torchvision
 import torch
+
+print(f"Current working directory: {os.getcwd()}")
+print(f"Full path of this script: {os.path.abspath(__file__)}")
 from torchvision.models.detection import retinanet_resnet50_fpn, RetinaNet
 from torchvision.models.detection.anchor_utils import AnchorGenerator
 from torchvision.models.detection.retinanet import RetinaNet_ResNet50_FPN_Weights
