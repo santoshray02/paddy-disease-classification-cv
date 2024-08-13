@@ -91,11 +91,7 @@ def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
     num_classes = len(class_names)
     
     # Create custom dataset
-    full_dataset = CustomDataset(train_dir, class_names, transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ]))
+    full_dataset = CustomDataset(train_dir, class_names, get_transform(train=True))
     
     # Split the dataset into train and validation sets
     dataset_size = len(full_dataset)
@@ -104,8 +100,8 @@ def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
     train_dataset, val_dataset = torch.utils.data.random_split(full_dataset, [train_size, val_size])
 
     # Create data loaders
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
 
     return train_loader, val_loader, class_names
 
@@ -134,12 +130,16 @@ class CustomDataset(torch.utils.data.Dataset):
         w, h = img.size
         boxes = torch.tensor([[0, 0, w, h]], dtype=torch.float32)
         
-        target = {}
-        target["boxes"] = boxes
-        target["labels"] = torch.tensor([label], dtype=torch.int64)
+        target = {
+            "boxes": boxes,
+            "labels": torch.tensor([label], dtype=torch.int64),
+            "image_id": torch.tensor([idx]),
+            "area": torch.tensor([(w * h)]),
+            "iscrowd": torch.zeros((1,), dtype=torch.int64)
+        }
         
         if self.transforms is not None:
-            img = self.transforms(img)
+            img, target = self.transforms(img, target)
 
         return img, target
 
