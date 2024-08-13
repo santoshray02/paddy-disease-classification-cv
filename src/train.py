@@ -39,6 +39,9 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
                     targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
                     loss_dict = model(images, targets)
                     loss = sum(loss for loss in loss_dict.values())
+                elif model_name.startswith('yolo'):
+                    # YOLO models are handled separately in the main loop
+                    continue
                 else:
                     inputs, labels = batch
                     inputs, labels = inputs.to(device), labels.to(device)
@@ -64,6 +67,9 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
                         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
                         outputs = model(images)
                         # TODO: Implement custom evaluation for object detection models
+                    elif model_name.startswith('yolo'):
+                        # YOLO models are handled separately in the main loop
+                        continue
                     else:
                         inputs, labels = batch
                         inputs, labels = inputs.to(device), labels.to(device)
