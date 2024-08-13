@@ -1,13 +1,9 @@
 import os
-import sys
 import logging
 from ultralytics import YOLO
 from data_loader import load_yolo_data, load_object_detection_data, load_classification_data, collate_fn
 import torchvision
 import torch
-
-print(f"Current working directory: {os.getcwd()}")
-print(f"Full path of this script: {os.path.abspath(__file__)}")
 from torchvision.models.detection import retinanet_resnet50_fpn, RetinaNet
 from torchvision.models.detection.anchor_utils import AnchorGenerator
 from torchvision.models.detection.retinanet import RetinaNet_ResNet50_FPN_Weights
@@ -77,7 +73,6 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
         # Load the model
         model = get_model(model_name, num_classes=num_classes)
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        print(device)
         model.to(device)
         
         params = [p for p in model.parameters() if p.requires_grad]
@@ -89,7 +84,7 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
             total_loss = 0
             for images, targets in train_loader:
                 images = list(image.to(device) for image in images)
-                targets = [{k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in t.items()} for t in targets]
+                targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
                 loss_dict = model(images, targets)
                 losses = sum(loss for loss in loss_dict.values())
@@ -110,8 +105,8 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
             with torch.no_grad():
                 for images, targets in val_loader:
                     images = list(image.to(device) for image in images)
-                    targets = [{k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in t.items()} for t in targets]
-
+                    targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+    
                     loss_dict = model(images, targets)
                     losses = sum(loss for loss in loss_dict.values())
                     val_loss += losses.item()
