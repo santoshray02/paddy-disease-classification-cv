@@ -88,7 +88,8 @@ def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
     """
     def get_transform(train):
         transforms = []
-        transforms.append(T.ToTensor())
+        transforms.append(T.PILToTensor())
+        transforms.append(T.ConvertImageDtype(torch.float))
         if train:
             transforms.append(T.RandomHorizontalFlip(0.5))
         return T.Compose(transforms)
@@ -146,10 +147,7 @@ class PaddyDiseaseDataset(torch.utils.data.Dataset):
         target["labels"] = torch.tensor([label], dtype=torch.int64)
         
         if self.transforms is not None:
-            img = self.transforms(img)
-            # Apply transforms to bounding boxes if necessary
-            if "boxes" in target:
-                target["boxes"] = self.transforms(target["boxes"])
+            img, target = self.transforms(img, target)
         
         return img, target
 
