@@ -93,12 +93,12 @@ def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
             transforms.append(T.RandomHorizontalFlip(0.5))
         return T.Compose(transforms)
 
-    dataset = PaddyDiseaseDataset(data_dir, get_transform(train=True))
+    full_dataset = PaddyDiseaseDataset(data_dir, get_transform(train=True))
     
     # Split the dataset
-    train_size = int(train_ratio * len(dataset))
-    val_size = len(dataset) - train_size
-    train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
+    train_size = int(train_ratio * len(full_dataset))
+    val_size = len(full_dataset) - train_size
+    train_dataset, val_dataset = torch.utils.data.random_split(full_dataset, [train_size, val_size])
 
     train_dataset.dataset.transforms = get_transform(train=True)
     val_dataset.dataset.transforms = get_transform(train=False)
@@ -107,7 +107,7 @@ def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
 
     # Add 1 to account for background class (0)
-    num_classes = len(dataset.class_to_idx) + 1
+    num_classes = len(full_dataset.class_to_idx) + 1
     return train_loader, val_loader, None, num_classes
 
 def collate_fn(batch):
@@ -146,7 +146,10 @@ class PaddyDiseaseDataset(torch.utils.data.Dataset):
         target["labels"] = torch.tensor([label], dtype=torch.int64)
         
         if self.transforms is not None:
-            img, target = self.transforms((img, target))
+            img = self.transforms(img)
+            # Apply transforms to bounding boxes if necessary
+            if "boxes" in target:
+                target["boxes"] = self.transforms(target["boxes"])
         
         return img, target
 
