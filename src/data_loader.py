@@ -144,10 +144,11 @@ class PaddyDiseaseDataset(torch.utils.data.Dataset):
         
         target = {}
         target["boxes"] = boxes
-        target["labels"] = torch.tensor([label], dtype=torch.int64)  # Remove the +1 shift
+        target["labels"] = torch.tensor([label], dtype=torch.int64)
         
         if self.transforms is not None:
-            img, target = T.Compose(self.transforms)(img, target)
+            for t in self.transforms:
+                img, target = t(img, target)
         
         return img, target
 
