@@ -40,8 +40,8 @@ def get_model(model_name, num_classes=None, pretrained=True):
             # Get number of input features for the classifier
             in_features = model.roi_heads.box_predictor.cls_score.in_features
             # Replace the pre-trained head with a new one
-            # Add 1 to num_classes to account for background class
-            model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes + 1)
+            # num_classes already includes the background class
+            model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
         return model
     elif model_name == 'retinanet':
         model = retinanet_resnet50_fpn(pretrained=pretrained)

@@ -144,14 +144,10 @@ class PaddyDiseaseDataset(torch.utils.data.Dataset):
         
         target = {}
         target["boxes"] = boxes
-        target["labels"] = torch.tensor([label], dtype=torch.int64)
+        target["labels"] = torch.tensor([label + 1], dtype=torch.int64)  # Add 1 to shift labels
         
         if self.transforms is not None:
-            for t in self.transforms:
-                if isinstance(t, (T.RandomHorizontalFlip, T.RandomVerticalFlip)):
-                    img, target = t(img, target)
-                else:
-                    img = t(img)
+            img, target = self.transforms(img, target)
         
         return img, target
 
