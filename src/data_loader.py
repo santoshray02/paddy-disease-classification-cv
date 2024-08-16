@@ -107,8 +107,8 @@ def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
 
-    # Add 1 to account for background class (0)
-    num_classes = len(full_dataset.class_to_idx) + 1
+    # Return the number of classes without adding 1 (background is already accounted for)
+    num_classes = len(full_dataset.class_to_idx)
     return train_loader, val_loader, None, num_classes
 
 def collate_fn(batch):
@@ -126,11 +126,11 @@ class PaddyDiseaseDataset(torch.utils.data.Dataset):
         for idx, class_name in enumerate(sorted(os.listdir(root))):
             class_dir = os.path.join(root, class_name)
             if os.path.isdir(class_dir):
-                self.class_to_idx[class_name] = idx + 1  # Start labels from 1
+                self.class_to_idx[class_name] = idx  # Start labels from 0
                 for img_name in os.listdir(class_dir):
                     if img_name.lower().endswith(('.png', '.jpg', '.jpeg')):
                         self.imgs.append(os.path.join(class_name, img_name))
-                        self.labels.append(idx + 1)  # Start labels from 1
+                        self.labels.append(idx)  # Start labels from 0
 
     def __getitem__(self, idx):
         img_path = os.path.join(self.root, self.imgs[idx])
