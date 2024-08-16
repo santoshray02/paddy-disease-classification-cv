@@ -147,11 +147,7 @@ class PaddyDiseaseDataset(torch.utils.data.Dataset):
         target["labels"] = torch.tensor([label], dtype=torch.int64)
         
         if self.transforms is not None:
-            for t in self.transforms:
-                if isinstance(t, (T.PILToTensor, T.ConvertImageDtype)):
-                    img = t(img)
-                else:
-                    img, target = t(img, target)
+            img, target = self.transforms(img, target)
         
         return img, target
 
