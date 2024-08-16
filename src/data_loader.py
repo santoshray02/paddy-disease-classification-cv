@@ -88,34 +88,10 @@ def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
     """
     def get_transform(train):
         transforms = []
+        transforms.append(T.ToTensor())
         if train:
             transforms.append(T.RandomHorizontalFlip(0.5))
-        transforms.append(T.ToTensor())
-        return Compose(transforms)
-
-    class Compose:
-        def __init__(self, transforms):
-            self.transforms = transforms
-
-        def __call__(self, data):
-            image, target = data
-            for t in self.transforms:
-                if isinstance(t, T.RandomHorizontalFlip):
-                    image, target = self.random_horizontal_flip(image, target, t.p)
-                elif isinstance(t, T.ToTensor):
-                    image = t(image)
-                else:
-                    image, target = t(image, target)
-            return image, target
-
-        def random_horizontal_flip(self, image, target, p):
-            if random.random() < p:
-                image = F.hflip(image)
-                if "boxes" in target:
-                    bbox = target["boxes"]
-                    bbox[:, [0, 2]] = image.width - bbox[:, [2, 0]]
-                    target["boxes"] = bbox
-            return image, target
+        return T.Compose(transforms)
 
     dataset = PaddyDiseaseDataset(data_dir, get_transform(train=True))
     
@@ -124,6 +100,7 @@ def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
     val_size = len(dataset) - train_size
     train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
 
+    train_dataset.dataset.transforms = get_transform(train=True)
     val_dataset.dataset.transforms = get_transform(train=False)
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
