@@ -47,7 +47,7 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
             else:
                 criterion = torch.nn.CrossEntropyLoss()
                 outputs = model(images)
-                losses = criterion(outputs, torch.cat([t['labels'] for t in targets]))
+                losses = criterion(outputs, torch.stack([t['labels'][0] for t in targets]))
             
             optimizer.zero_grad()
             losses.backward()
@@ -76,7 +76,7 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
                     losses = sum(loss for loss in loss_dict.values())
                 else:
                     outputs = model(images)
-                    losses = criterion(outputs, torch.cat([t['labels'] for t in targets]))
+                    losses = criterion(outputs, torch.stack([t['labels'][0] for t in targets]))
                 
                 total_val_loss += losses.item()
         
