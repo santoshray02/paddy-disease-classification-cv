@@ -30,6 +30,7 @@ def load_classification_data(data_dir, batch_size=32, train_ratio=0.8):
     ])
 
     def is_valid_file(x):
+        return 1
         path_parts = os.path.normpath(x).split(os.sep)
         if 'ipynb_checkpoints' in path_parts:
                     # if 'ipynb_checkpoints' in path_parts or any(part.startswith('.') for part in path_parts):
@@ -38,17 +39,18 @@ def load_classification_data(data_dir, batch_size=32, train_ratio=0.8):
         return 0
 
     try:
+        print(data_dir)
         full_dataset = datasets.ImageFolder(root=data_dir, transform=transform, is_valid_file=is_valid_file)
     except FileNotFoundError as e:
-        print(f"Error loading dataset: {e}")
-        print(f"Contents of {data_dir}:")
-        for root, dirs, files in os.walk(data_dir):
-            level = root.replace(data_dir, '').count(os.sep)
-            indent = ' ' * 4 * level
-            print(f"{indent}{os.path.basename(root)}/")
-            sub_indent = ' ' * 4 * (level + 1)
-            for f in files:
-                print(f"{sub_indent}{f}")
+        # print(f"Error loading dataset: {e}")
+        # print(f"Contents of {data_dir}:")
+        # for root, dirs, files in os.walk(data_dir):
+        #     level = root.replace(data_dir, '').count(os.sep)
+        #     indent = ' ' * 4 * level
+        #     print(f"{indent}{os.path.basename(root)}/")
+        #     sub_indent = ' ' * 4 * (level + 1)
+        #     for f in files:
+        #         print(f"{sub_indent}{f}")
         raise
     
     # Split the dataset
