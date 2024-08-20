@@ -18,8 +18,35 @@ def train_yolov8(data_yaml, model_size='s', epochs=100, batch_size=16, learning_
     model = load_yolov8(model_size)
     
     try:
-        # Train the model
-        results = model.train(data=data_yaml, epochs=epochs, batch=batch_size, lr0=learning_rate)
+        # Ensure data_yaml path is absolute
+        data_yaml = os.path.abspath(data_yaml)
+        
+        # Check if the YAML file exists
+        if not os.path.exists(data_yaml):
+            raise FileNotFoundError(f"The data YAML file '{data_yaml}' does not exist.")
+        
+        # Load and validate the YAML file
+        with open(data_yaml, 'r') as file:
+            yaml_data = yaml.safe_load(file)
+        
+        # Ensure train and val paths are absolute
+        for key in ['train', 'val']:
+            if key in yaml_data:
+                yaml_data[key] = os.path.abspath(os.path.join(os.path.dirname(data_yaml), yaml_data[key]))
+                if not os.path.exists(yaml_data[key]):
+                    raise FileNotFoundError(f"The {key} path '{yaml_data[key]}' does not exist.")
+        
+        # Write the updated YAML data to a temporary file
+        temp_yaml = 'temp_data.yaml'
+        with open(temp_yaml, 'w') as file:
+            yaml.dump(yaml_data, file)
+        
+        # Train the model using the temporary YAML file
+        results = model.train(data=temp_yaml, epochs=epochs, batch=batch_size, lr0=learning_rate)
+        
+        # Remove the temporary YAML file
+        os.remove(temp_yaml)
+        
         return results, model
     except Exception as e:
         print(f"An error occurred during training: {e}")
