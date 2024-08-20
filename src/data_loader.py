@@ -82,22 +82,19 @@ names: ['bacterial_leaf_blight', 'bacterial_leaf_streak', 'bacterial_panicle_bli
         f.write(yaml_content)
     
     return yaml_path
-def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8):
+def load_object_detection_data(data_dir, batch_size=32, train_ratio=0.8, model_type='fasterrcnn'):
     """
     Load and preprocess data for object detection models.
     """
-    def get_transform(train, model_type):
+    def get_transform(train):
         transforms = []
         if train:
             transforms.append(T.RandomHorizontalFlip(0.5))
         transforms.append(T.PILToTensor())
         transforms.append(T.ConvertImageDtype(torch.float))
-        if model_type in ['fasterrcnn', 'retinanet', 'ssd']:
-            return transforms
-        else:
-            return T.Compose(transforms)
+        return transforms
 
-    full_dataset = PaddyDiseaseDataset(data_dir, get_transform(train=True, model_type='fasterrcnn'))
+    full_dataset = PaddyDiseaseDataset(data_dir, get_transform(train=True))
     
     # Split the dataset
     train_size = int(train_ratio * len(full_dataset))

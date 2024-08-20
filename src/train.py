@@ -20,7 +20,7 @@ def train(data_dir, model_name, batch_size=32, output_dir='./output', num_epochs
     
     # Initialize model
     if model_name in ['fasterrcnn', 'retinanet', 'ssd']:
-        model = get_model(model_name, num_classes=num_classes + 1)  # Add 1 for background class
+        model = get_model(model_name, num_classes=num_classes)  # Background class is already accounted for
     else:
         model = get_model(model_name, num_classes=num_classes)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
