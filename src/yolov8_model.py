@@ -6,6 +6,8 @@ import random
 import requests
 from zipfile import ZipFile
 from io import BytesIO
+import yaml
+import torch
 
 def load_yolov8(model_size='s'):
     model = YOLO(f'yolov8{model_size}.pt')
@@ -14,15 +16,10 @@ def load_yolov8(model_size='s'):
 def train_yolov8(data_dir, model_size='s', epochs=100, batch_size=16):
     model = load_yolov8(model_size)
     
-    # Create a temporary YAML file
-    import yaml
-    import os
-    
     data_yaml = 'temp_data.yaml'
     train_dir = os.path.join(data_dir, 'train_images')
     val_dir = os.path.join(data_dir, 'val_images')
     
-    # Ensure the directories exist
     if not os.path.exists(train_dir) or not os.path.exists(val_dir):
         raise ValueError(f"Training or validation directory not found in {data_dir}. Expected directories: 'train_images' and 'val_images'")
     
@@ -40,9 +37,9 @@ def train_yolov8(data_dir, model_size='s', epochs=100, batch_size=16):
     
     try:
         # Train the model
-        model.train(data=data_yaml, epochs=epochs, batch=batch_size)
+        results = model.train(data=data_yaml, epochs=epochs, batch=batch_size)
+        return results
     finally:
-        # Remove the temporary YAML file
         os.remove(data_yaml)
 
 def predict_yolov8(model, image):
@@ -54,6 +51,12 @@ def process_results(results, image):
         im_array = r.plot()  # plot a BGR numpy array of predictions
         im = cv2.cvtColor(im_array, cv2.COLOR_BGR2RGB)  # convert to RGB
         return im
+
+def save_model(model, path):
+    model.save(path)
+
+def load_trained_model(path):
+    return YOLO(path)
 
 def evaluate_yolov8(model, data_yaml):
     """
@@ -82,12 +85,26 @@ def download_dataset():
     return os.path.join(image_dir, random_image)
 
 if __name__ == "__main__":
-    # Download dataset and get a random image path
+    # Example usage
+    data_dir = "path/to/your/data"
+    
+    # Train the model
+    print("Training YOLOv8 model...")
+    model = load_yolov8('s')
+    results = train_yolov8(data_dir, model_size='s', epochs=10, batch_size=16)
+    print("Training completed.")
+    
+    # Save the trained model
+    save_model(model, "yolov8_trained.pt")
+    print("Model saved.")
+    
+    # Load the trained model
+    loaded_model = load_trained_model("yolov8_trained.pt")
+    print("Trained model loaded.")
+    
+    # Download dataset and get a random image path for inference
     image_path = download_dataset()
-    print(f"Using image: {image_path}")
-
-    # Load the model
-    model = load_yolov8('s')  # Load small YOLOv8 model
+    print(f"Using image for inference: {image_path}")
 
     # Read the image
     image = cv2.imread(image_path)
@@ -96,7 +113,7 @@ if __name__ == "__main__":
         exit(1)
 
     # Perform prediction
-    results = predict_yolov8(model, image)
+    results = predict_yolov8(loaded_model, image)
 
     # Process and display results
     processed_image = process_results(results, image)
@@ -107,3 +124,8 @@ if __name__ == "__main__":
     cv2.destroyAllWindows()
 
     print("YOLOv8 prediction completed successfully.")
+    
+    # Evaluate the model
+    print("Evaluating the model...")
+    metrics = evaluate_yolov8(loaded_model, "temp_data.yaml")
+    print("Evaluation metrics:", metrics)
