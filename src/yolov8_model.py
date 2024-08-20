@@ -8,39 +8,22 @@ from zipfile import ZipFile
 from io import BytesIO
 import yaml
 import torch
+import argparse
 
 def load_yolov8(model_size='s'):
     model = YOLO(f'yolov8{model_size}.pt')
     return model
 
-def train_yolov8(data_dir, model_size='s', epochs=100, batch_size=16):
+def train_yolov8(data_yaml, model_size='s', epochs=100, batch_size=16, learning_rate=0.01):
     model = load_yolov8(model_size)
-    
-    data_yaml = 'temp_data.yaml'
-    train_dir = os.path.join(data_dir, 'train_images')
-    val_dir = os.path.join(data_dir, 'val_images')
-    
-    if not os.path.exists(train_dir) or not os.path.exists(val_dir):
-        raise ValueError(f"Training or validation directory not found in {data_dir}. Expected directories: 'train_images' and 'val_images'")
-    
-    data_dict = {
-        'path': data_dir,
-        'train': train_dir,
-        'val': val_dir,
-        'nc': 10,  # number of classes, adjust if needed
-        'names': ['bacterial_leaf_blight', 'bacterial_leaf_streak', 'bacterial_panicle_blight', 
-                  'blast', 'brown_spot', 'dead_heart', 'downy_mildew', 'hispa', 'normal', 'tungro']
-    }
-    
-    with open(data_yaml, 'w') as f:
-        yaml.dump(data_dict, f)
     
     try:
         # Train the model
-        results = model.train(data=data_yaml, epochs=epochs, batch=batch_size)
-        return results
-    finally:
-        os.remove(data_yaml)
+        results = model.train(data=data_yaml, epochs=epochs, batch=batch_size, lr0=learning_rate)
+        return results, model
+    except Exception as e:
+        print(f"An error occurred during training: {e}")
+        return None, None
 
 def predict_yolov8(model, image):
     results = model(image)
@@ -85,47 +68,62 @@ def download_dataset():
     return os.path.join(image_dir, random_image)
 
 if __name__ == "__main__":
-    # Example usage
-    data_dir = "path/to/your/data"
-    
-    # Train the model
-    print("Training YOLOv8 model...")
-    model = load_yolov8('s')
-    results = train_yolov8(data_dir, model_size='s', epochs=10, batch_size=16)
-    print("Training completed.")
-    
-    # Save the trained model
-    save_model(model, "yolov8_trained.pt")
-    print("Model saved.")
-    
-    # Load the trained model
-    loaded_model = load_trained_model("yolov8_trained.pt")
-    print("Trained model loaded.")
-    
-    # Download dataset and get a random image path for inference
-    image_path = download_dataset()
-    print(f"Using image for inference: {image_path}")
+    parser = argparse.ArgumentParser(description="YOLOv8 operations")
+    parser.add_argument("--operation", type=str, required=True, choices=['train', 'predict', 'evaluate'], help="Operation to perform")
+    parser.add_argument("--data_yaml", type=str, help="Path to data.yaml file")
+    parser.add_argument("--epochs", type=int, default=100, help="Number of epochs for training")
+    parser.add_argument("--batch_size", type=int, default=16, help="Batch size for training")
+    parser.add_argument("--learning_rate", type=float, default=0.01, help="Learning rate for training")
+    parser.add_argument("--model_size", type=str, default='s', choices=['n', 's', 'm', 'l', 'x'], help="YOLOv8 model size")
+    parser.add_argument("--image_path", type=str, help="Path to image for prediction")
+    parser.add_argument("--model_path", type=str, default="yolov8_trained.pt", help="Path to save/load the model")
 
-    # Read the image
-    image = cv2.imread(image_path)
-    if image is None:
-        print(f"Error: Unable to read image at {image_path}")
-        exit(1)
+    args = parser.parse_args()
 
-    # Perform prediction
-    results = predict_yolov8(loaded_model, image)
+    if args.operation == 'train':
+        print("Training YOLOv8 model...")
+        results, model = train_yolov8(args.data_yaml, model_size=args.model_size, epochs=args.epochs, 
+                                      batch_size=args.batch_size, learning_rate=args.learning_rate)
+        if results is not None:
+            print("Training completed.")
+            save_model(model, args.model_path)
+            print(f"Model saved to {args.model_path}")
+        else:
+            print("Training failed.")
 
-    # Process and display results
-    processed_image = process_results(results, image)
+    elif args.operation == 'predict':
+        if not args.image_path:
+            print("Error: --image_path is required for prediction")
+            exit(1)
 
-    # Display the image (you might need to adjust this based on your environment)
-    cv2.imshow("YOLOv8 Prediction", processed_image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+        model = load_trained_model(args.model_path)
+        print(f"Model loaded from {args.model_path}")
 
-    print("YOLOv8 prediction completed successfully.")
-    
-    # Evaluate the model
-    print("Evaluating the model...")
-    metrics = evaluate_yolov8(loaded_model, "temp_data.yaml")
-    print("Evaluation metrics:", metrics)
+        image = cv2.imread(args.image_path)
+        if image is None:
+            print(f"Error: Unable to read image at {args.image_path}")
+            exit(1)
+
+        results = predict_yolov8(model, image)
+        processed_image = process_results(results, image)
+
+        cv2.imshow("YOLOv8 Prediction", processed_image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+        print("YOLOv8 prediction completed successfully.")
+
+    elif args.operation == 'evaluate':
+        if not args.data_yaml:
+            print("Error: --data_yaml is required for evaluation")
+            exit(1)
+
+        model = load_trained_model(args.model_path)
+        print(f"Model loaded from {args.model_path}")
+
+        print("Evaluating the model...")
+        metrics = evaluate_yolov8(model, args.data_yaml)
+        print("Evaluation metrics:", metrics)
+
+    else:
+        print(f"Unknown operation: {args.operation}")
